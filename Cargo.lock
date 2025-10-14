@@ -3,5 +3,12 @@
 version = 4
 
 [[package]]
+name = "feap_app"
+version = "0.1.0"
+
+[[package]]
 name = "feap_editor"
 version = "0.1.0"
+dependencies = [
+ "feap_app",
+]

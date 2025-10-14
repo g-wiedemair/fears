@@ -1,7 +1,9 @@
 [package]
-name = "feap_editor"
+name = "feap_app"
 version.workspace = true
 edition.workspace = true
 
+[features]
+trace = []
+
 [dependencies]
-feap_app = { path = "../feap_app" }

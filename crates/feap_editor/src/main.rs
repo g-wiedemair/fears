@@ -1,3 +1,5 @@
+use feap_app::App;
+
 fn main() {
-    todo!();
+    App::new().run();
 }
