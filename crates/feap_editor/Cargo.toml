@@ -3,5 +3,9 @@ name = "feap_editor"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = ["trace"]
+trace = ["feap_app/trace"]
+
 [dependencies]
 feap_app = { path = "../feap_app" }

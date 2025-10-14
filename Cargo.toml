@@ -8,3 +8,6 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
+tracing = { version = "0.1", default-features = false}
+
+downcast-rs = { version = "2", default-features = false }

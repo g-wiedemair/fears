@@ -1,5 +1,7 @@
 use feap_app::App;
 
 fn main() {
-    App::new().run();
+    let mut app = App::new();
+    // app.add_plugins(MinimalPlugins);
+    app.run();
 }

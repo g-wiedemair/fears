@@ -1,3 +1,8 @@
+use crate::Plugins;
+
+#[cfg(feature = "trace")]
+use tracing::info_span;
+
 /// [`App`] is the primary API for writing user applications.
 /// ```
 pub struct App {
@@ -35,6 +40,18 @@ impl App {
         let runner = core::mem::replace(&mut self.runner, Box::new(run_once));
         let app = std::mem::take(self);
         (runner)(app);
+    }
+
+    /// Installs a [`Plugin`] collection
+    ///
+    /// Feap prioritizes modularity as a core principle.
+    /// All features are implemented as plugins, even the complex ones like rendering.
+    ///
+    /// [`Plugin`]s can be grouped into a set by using a [`PluginGroup`].
+    ///
+    #[track_caller]
+    pub fn add_plugins<M>(&mut self, _plugins: impl Plugins<M>) -> &mut Self {
+        self
     }
 }
 
