@@ -1,0 +1,6 @@
+[package]
+name = "feap_editor"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
