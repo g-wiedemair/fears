@@ -5,7 +5,7 @@
 After this milestone, we have an application that can open a window and show a triangle.
 
 - [x] add an application with an running fn
-- [] 
+- [] add minimal plugins to start with a main loop 
 
 ## Stage 0: Hello Project
 
