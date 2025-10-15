@@ -1,0 +1,21 @@
+[package]
+name = "feap_core"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = []
+
+# access to the `std` crate.
+# Enabling this feature provides access to certain additional features for supported platforms
+std = ["alloc", "foldhash/std"]
+
+alloc = ["dep:hashbrown"]
+
+serialize = []
+
+rayon = []
+
+[dependencies]
+foldhash = { workspace = true }
+hashbrown = { workspace = true, optional = true }

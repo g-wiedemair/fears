@@ -1,0 +1,12 @@
+[package]
+name = "feap_derive"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }
+feap_macro_utils = { path = "../feap_macro_utils" }

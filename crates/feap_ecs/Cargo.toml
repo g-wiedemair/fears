@@ -1,0 +1,11 @@
+[package]
+name = "feap_ecs"
+version.workspace = true
+edition.workspace = true
+
+[features]
+std = []
+
+[dependencies]
+feap_core = { path = "../feap_core" }
+feap_ecs_macros = { path = "macros" }

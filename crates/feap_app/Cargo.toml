@@ -4,9 +4,19 @@ version.workspace = true
 edition.workspace = true
 
 [features]
+default = ["std"]
+
+std = ["feap_core/std"]
+
 trace = ["dep:tracing"]
 
 [dependencies]
-tracing = {workspace = true, optional=true}
+feap_derive = { path = "../feap_derive" }
+feap_core = { path = "../feap_core" }
+feap_ecs = { path = "../feap_ecs" }
+feap_ecs_macros = { path = "../feap_ecs/macros" }
 
-downcast-rs = {workspace = true}
+tracing = { workspace = true, optional = true }
+log = { workspace = true }
+thiserror = { workspace = true }
+downcast-rs = { workspace = true }
