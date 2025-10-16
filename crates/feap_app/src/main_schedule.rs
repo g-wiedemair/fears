@@ -21,7 +21,7 @@ pub struct Main;
 
 impl Main {
     /// A system that runs the "main schedule"
-    pub fn run_main(_world: &mut World, mut _run_at_least_once: Local<bool>) {}
+    pub fn run_main(_world: &mut World, _run_at_least_once: Local<bool>) {}
 }
 
 /// The schedule that contains systems which only run after a fixed period of time has elapsed

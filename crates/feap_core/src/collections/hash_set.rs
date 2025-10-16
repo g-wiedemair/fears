@@ -252,7 +252,7 @@ where
 }
 
 impl<T> HashSet<T, FixedHasher> {
-    /// Creates an empoty [`HashSet`]
+    /// Creates an empty [`HashSet`]
     #[inline]
     pub const fn new() -> Self {
         Self::with_hasher(FixedHasher)

@@ -2,7 +2,7 @@ use crate::{App, Plugin, plugin::PluginsState};
 use feap_core::collections::{HashMap, HashSet};
 use feap_ecs::{
     intern::Interned,
-    schedule::{InternedScheduleLabel, Schedule, ScheduleLabel, Schedules},
+    schedule::{InternedScheduleLabel, Schedule, Schedules},
     world::World,
 };
 

@@ -5,7 +5,7 @@ use feap_core::ptr::{self, OwningPtr, Ptr, PtrMut};
 /// A flat, typed-erased data storage type
 ///
 /// Used to densely store homogeneous ECS data. A blob is usually an arbitrary block of contiguous memory without any identity, and
-/// could be used to represent any arbitrary data (i.e. string, arrays, etc). This type only stores meta-data about the blob that it stores,
+/// could be used to represent any arbitrary data (i.e. string, arrays, etc.). This type only stores meta-data about the blob that it stores,
 /// and a pointer to the location of the start of the array, similar to a C-style `void*` array.
 ///
 /// This type is reliant on its owning type to store the capacity and length information.
@@ -154,7 +154,7 @@ const fn padding_needed_for(layout: &Layout, align: usize) -> usize {
     // 2. `len + align - 1` can overflow by at most `align - 1`,
     //    so the &-mask with `!(align - 1)` will ensure that in the
     //    case of overflow, `len_rounded_up` will itself be 0.
-    //    Thus the returned padding, when added to `len`, yields 0,
+    //    Thus, the returned padding, when added to `len`, yields 0,
     //    which trivially satisfies the alignment `align`.
     //
     // (Of course, attempts to allocate blocks of memory whose

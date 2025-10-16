@@ -80,7 +80,7 @@ impl App {
 
         let runner = core::mem::replace(&mut self.runner, Box::new(run_once));
         let app = std::mem::take(self);
-        (runner)(app);
+        runner(app);
     }
 
     /// Returns `true` if any of the sub-apps are building plugins

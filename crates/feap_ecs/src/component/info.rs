@@ -51,7 +51,7 @@ impl ComponentInfo {
     }
 }
 
-/// A value which uniquely identifies the type of a [`Component`] or [`Resource`] within a [`World`]
+/// A value which uniquely identifies the type of [`Component`] or [`Resource`] within a [`World`]
 ///
 /// Each time a new `Component` type is registered within a `World` a corresponding `ComponentId` is created to track it.
 ///
