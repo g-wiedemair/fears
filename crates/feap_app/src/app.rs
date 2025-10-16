@@ -5,7 +5,7 @@ use crate::{
 };
 use core::panic::AssertUnwindSafe;
 use feap_core::collections::HashMap;
-use feap_ecs::schedule::ScheduleLabel;
+use feap_ecs::schedule::{Schedule, ScheduleLabel};
 
 #[cfg(feature = "trace")]
 use tracing::info_span;
@@ -178,6 +178,13 @@ impl App {
 
         self.main_mut().plugin_registry[index] = plugin;
         Ok(self)
+    }
+
+    /// Inserts a new `schedule` under the provided `label`, overwriting any existing
+    /// schedule with the same label
+    pub fn add_schedule(&mut self, schedule: Schedule) -> &mut Self {
+        self.main_mut().add_schedule(schedule);
+        self
     }
 }
 

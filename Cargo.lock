@@ -20,9 +20,7 @@ version = "0.1.0"
 dependencies = [
  "downcast-rs",
  "feap_core",
- "feap_derive",
  "feap_ecs",
- "feap_ecs_macros",
  "log",
  "thiserror",
  "tracing",
@@ -51,6 +49,8 @@ version = "0.1.0"
 dependencies = [
  "feap_core",
  "feap_ecs_macros",
+ "feap_utils",
+ "nonmax",
 ]
 
 [[package]]
@@ -78,6 +78,13 @@ dependencies = [
  "quote",
  "syn",
  "toml_edit",
+]
+
+[[package]]
+name = "feap_utils"
+version = "0.1.0"
+dependencies = [
+ "feap_core",
 ]
 
 [[package]]
@@ -116,6 +123,12 @@ name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
+
+[[package]]
+name = "nonmax"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "610a5acd306ec67f907abe5567859a3c693fb9886eb1f012ab8f2a47bef3db51"
 
 [[package]]
 name = "pin-project-lite"

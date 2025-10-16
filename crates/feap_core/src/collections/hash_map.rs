@@ -7,10 +7,10 @@
 use crate::hash::FixedHasher;
 use core::{
     fmt::Debug,
-    hash::Hash,
+    hash::{BuildHasher, Hash},
     ops::{Deref, DerefMut, Index},
 };
-use hashbrown::hash_map as hb;
+use hashbrown::{Equivalent, hash_map as hb};
 
 #[repr(transparent)]
 pub struct HashMap<K, V, S = FixedHasher>(hb::HashMap<K, V, S>);
@@ -267,5 +267,20 @@ where
         I: IntoParallelIterator<Item = T>,
     {
         <hb::HashMap<K, V, S> as ParallelExtend<T>>::par_extend(&mut self.0, par_iter);
+    }
+}
+
+impl<K, V, S> HashMap<K, V, S>
+where
+    K: Eq + Hash,
+    S: BuildHasher,
+{
+    /// Returns a reference to the value corresponding to the key
+    #[inline]
+    pub fn get<Q>(&self, k: &Q) -> Option<&V>
+    where
+        Q: Hash + Equivalent<K> + ?Sized,
+    {
+        self.0.get(k)
     }
 }

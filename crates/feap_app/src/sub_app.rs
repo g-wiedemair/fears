@@ -1,6 +1,10 @@
 use crate::{App, Plugin, plugin::PluginsState};
 use feap_core::collections::{HashMap, HashSet};
-use feap_ecs::{intern::Interned, schedule::InternedScheduleLabel};
+use feap_ecs::{
+    intern::Interned,
+    schedule::{InternedScheduleLabel, Schedule, ScheduleLabel, Schedules},
+    world::World,
+};
 
 feap_ecs::define_label!(
     /// A strongly-typed class of labels used to identify an [`App`]
@@ -20,6 +24,8 @@ pub type InternedAppLabel = Interned<dyn AppLabel>;
 /// separate from the main application
 ///
 pub struct SubApp {
+    /// The data of this application
+    world: World,
     /// List of plugins that have been added
     pub(crate) plugin_registry: Vec<Box<dyn Plugin>>,
     /// The names of plugins that have been added to this app.
@@ -33,7 +39,10 @@ pub struct SubApp {
 
 impl Default for SubApp {
     fn default() -> Self {
+        let mut world = World::new();
+        world.init_resource::<Schedules>();
         Self {
+            world,
             plugin_registry: Vec::default(),
             plugin_names: HashSet::default(),
             plugin_build_depth: 0,
@@ -85,6 +94,12 @@ impl SubApp {
             }
             state => state,
         }
+    }
+
+    pub fn add_schedule(&mut self, schedule: Schedule) -> &mut Self {
+        let mut schedules = self.world.resource_mut::<Schedules>();
+        schedules.insert(schedule);
+        self
     }
 }
 

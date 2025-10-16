@@ -2,19 +2,20 @@
 name = "feap_app"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 
 [features]
-default = ["std"]
-
-std = ["feap_core/std"]
+default = []
 
 trace = ["dep:tracing"]
+serialize = []
+
+std = ["feap_core/std", "feap_ecs/std"]
+
 
 [dependencies]
-feap_derive = { path = "../feap_derive" }
 feap_core = { path = "../feap_core" }
 feap_ecs = { path = "../feap_ecs" }
-feap_ecs_macros = { path = "../feap_ecs/macros" }
 
 tracing = { workspace = true, optional = true }
 log = { workspace = true }

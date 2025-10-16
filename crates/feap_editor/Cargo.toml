@@ -2,10 +2,15 @@
 name = "feap_editor"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 
 [features]
-default = ["trace"]
+default = ["trace", "default_platform"]
+
 trace = ["feap_app/trace"]
+
+default_platform = ["std"]
+std = ["feap_app/std"]
 
 [dependencies]
 feap_app = { path = "../feap_app" }

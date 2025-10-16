@@ -1,6 +1,6 @@
 #![no_std]
 
-mod cfg;
+pub mod cfg;
 
 cfg::std! {
     extern crate std;
@@ -13,4 +13,5 @@ cfg::alloc! {
 }
 
 pub mod hash;
+pub mod ptr;
 pub mod sync;

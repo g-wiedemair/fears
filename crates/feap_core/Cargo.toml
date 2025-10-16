@@ -2,17 +2,19 @@
 name = "feap_core"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 
 [features]
 default = []
+
+trace = []
+serialize = []
 
 # access to the `std` crate.
 # Enabling this feature provides access to certain additional features for supported platforms
 std = ["alloc", "foldhash/std"]
 
 alloc = ["dep:hashbrown"]
-
-serialize = []
 
 rayon = []
 

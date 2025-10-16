@@ -2,10 +2,25 @@
 name = "feap_ecs"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 
 [features]
+default = []
+
+trace = []
+serialize = []
+
 std = []
+
+multi_threaded = []
+
+## Provides more detailed tracking of the cause of various effects within the ECS.
+## This will often provide more detailed error messages.
+track_location = []
 
 [dependencies]
 feap_core = { path = "../feap_core" }
+feap_utils = { path = "../feap_utils" }
 feap_ecs_macros = { path = "macros" }
+
+nonmax.workspace = true

@@ -1,3 +1,4 @@
+pub mod atomic;
 mod poison;
 mod rwlock;
 

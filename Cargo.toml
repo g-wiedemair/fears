@@ -6,6 +6,7 @@ default-members = ["crates/feap_editor"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.88.0"
 
 [workspace.dependencies]
 tracing = { version = "0.1", default-features = false }
@@ -18,3 +19,7 @@ hashbrown = { version = "0.16.0", features = [
     "equivalent",
     "raw-entry",
 ], default-features = false }
+nonmax = { version = "0.5", default-features = false }
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "warn"
