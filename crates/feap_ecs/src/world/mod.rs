@@ -1,3 +1,7 @@
+mod deferred_world;
+
+pub use deferred_world::DeferredWorld;
+
 use crate::{
     change_detection::{MaybeLocation, Mut, MutUntyped, TicksMut},
     component::{ComponentId, ComponentIds, Components, ComponentsRegistrator, Tick},

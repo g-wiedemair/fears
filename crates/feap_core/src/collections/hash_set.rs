@@ -265,4 +265,10 @@ impl<T, S> HashSet<T, S> {
     pub const fn with_hasher(hasher: S) -> Self {
         Self(hb::HashSet::with_hasher(hasher))
     }
+
+    /// Creates an empty [`HashSet`] with the specified capacity, using `hasher` to hash the keys
+    #[inline]
+    pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> Self {
+        Self(hb::HashSet::with_capacity_and_hasher(capacity, hasher))
+    }
 }

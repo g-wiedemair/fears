@@ -5,11 +5,17 @@ use crate::{
 };
 use core::panic::AssertUnwindSafe;
 use feap_core::collections::HashMap;
-use feap_ecs::schedule::{Schedule, ScheduleLabel};
+use feap_ecs::{
+    schedule::{IntoScheduleConfigs, Schedule, ScheduleLabel},
+    system::ScheduleSystem,
+};
 
 #[cfg(feature = "trace")]
 use tracing::info_span;
 
+use feap_ecs::resource::Resource;
+use feap_ecs::schedule::InternedSystemSet;
+use feap_ecs::world::FromWorld;
 #[cfg(feature = "std")]
 use std::panic::{catch_unwind, resume_unwind};
 
@@ -186,11 +192,39 @@ impl App {
         self.main_mut().add_schedule(schedule);
         self
     }
+
+    /// Adds one or more systems to the given schedule in this app's  [`Schedules`]
+    pub fn add_systems<M>(
+        &mut self,
+        schedule: impl ScheduleLabel,
+        systems: impl IntoScheduleConfigs<ScheduleSystem, M>,
+    ) -> &mut Self {
+        self.main_mut().add_systems(schedule, systems);
+        self
+    }
+
+    /// Configures a collection of system sets in the provided schedule, adding any sets that do not exist
+    #[track_caller]
+    pub fn configure_sets<M>(
+        &mut self,
+        schedule: impl ScheduleLabel,
+        sets: impl IntoScheduleConfigs<InternedSystemSet, M>,
+    ) -> &mut Self {
+        self.main_mut().configure_sets(schedule, sets);
+        self
+    }
+
+    /// Inserts the [`Resource`], initialized with its default value, into the app,
+    /// if there is no existing instance of `R`
+    pub fn init_resource<R: Resource + FromWorld>(&mut self) -> &mut Self {
+        self.main_mut().init_resource::<R>();
+        self
+    }
 }
 
 type RunnerFn = Box<dyn FnOnce(App) -> AppExit>;
 
-fn run_once(_app: App) -> AppExit {
+fn run_once(mut app: App) -> AppExit {
     // while app.plugins_state() == PluginsState::Adding {
     //     #[cfg(not(target_arch = "wasm32"))]
     //     feap_tasks::tick_global_task_pools_on_main_thread();

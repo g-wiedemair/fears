@@ -1,8 +1,12 @@
 use crate::{App, Plugin, plugin::PluginsState};
 use feap_core::collections::{HashMap, HashSet};
+use feap_ecs::resource::Resource;
+use feap_ecs::schedule::InternedSystemSet;
+use feap_ecs::world::FromWorld;
 use feap_ecs::{
     intern::Interned,
-    schedule::{InternedScheduleLabel, Schedule, Schedules},
+    schedule::{InternedScheduleLabel, IntoScheduleConfigs, Schedule, ScheduleLabel, Schedules},
+    system::ScheduleSystem,
     world::World,
 };
 
@@ -99,6 +103,32 @@ impl SubApp {
     pub fn add_schedule(&mut self, schedule: Schedule) -> &mut Self {
         let mut schedules = self.world.resource_mut::<Schedules>();
         schedules.insert(schedule);
+        self
+    }
+
+    pub fn add_systems<M>(
+        &mut self,
+        schedule: impl ScheduleLabel,
+        systems: impl IntoScheduleConfigs<ScheduleSystem, M>,
+    ) -> &mut Self {
+        let mut schedules = self.world.resource_mut::<Schedules>();
+        schedules.add_systems(schedule, systems);
+        self
+    }
+
+    #[track_caller]
+    pub fn configure_sets<M>(
+        &mut self,
+        schedule: impl ScheduleLabel,
+        sets: impl IntoScheduleConfigs<InternedSystemSet, M>,
+    ) -> &mut Self {
+        let mut schedules = self.world.resource_mut::<Schedules>();
+        schedules.configure_sets(schedule, sets);
+        self
+    }
+
+    pub fn init_resource<R: Resource + FromWorld>(&mut self) -> &mut Self {
+        self.world.init_resource::<R>();
         self
     }
 }

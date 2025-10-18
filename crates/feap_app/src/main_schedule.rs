@@ -1,6 +1,8 @@
 use crate::Plugin;
+use feap_ecs::resource::Resource;
+use feap_ecs::schedule::InternedScheduleLabel;
 use feap_ecs::{
-    schedule::{ExecutorKind, Schedule, ScheduleLabel, SystemSet},
+    schedule::{ExecutorKind, IntoScheduleConfigs, Schedule, ScheduleLabel, SystemSet},
     system::Local,
     world::World,
 };
@@ -21,8 +23,46 @@ pub struct Main;
 
 impl Main {
     /// A system that runs the "main schedule"
-    pub fn run_main(_world: &mut World, _run_at_least_once: Local<bool>) {}
+    pub fn run_main(/*_world: &mut World, _run_at_least_once: Local<bool>*/) {
+        todo!()
+    }
 }
+
+/// The schedule that runs before [`Startup`]
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct PreStartup;
+
+/// The schedule that runs once when the app starts
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct Startup;
+
+/// The schedule that runs after [`Startup`]
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct PostStartup;
+
+/// Runs first in the schedule
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct First;
+
+/// The schedule that contains logic that must run before [`Update`].
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct PreUpdate;
+
+/// The schedule that contains any logic that must run once per render frame
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct Update;
+
+/// The schedule that contains scene spawning
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct SpawnScene;
+
+/// The schedule that contains logic that must run after [`Update`].
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct PostUpdate;
+
+/// The schedule that runs last
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct Last;
 
 /// The schedule that contains systems which only run after a fixed period of time has elapsed
 ///
@@ -31,6 +71,13 @@ impl Main {
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct FixedMain;
 
+impl FixedMain {
+    /// A system that runs the fixed timestep's "main schedule"
+    pub fn run_fixed_main(_world: &mut World) {
+        todo!()
+    }
+}
+
 /// Runs the [`FixedMain`] schedule in a loop according until all relevant elapsed time has been "consumed"
 ///
 /// Note that in contrast to most other Feap schedules, systems added directly to
@@ -38,11 +85,6 @@ pub struct FixedMain;
 ///
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct RunFixedMainLoop;
-
-impl FixedMain {
-    /// A system that runs the fixed timestep's "main schedule"
-    pub fn run_fixed_main(_world: &mut World) {}
-}
 
 /// Set enum for the systems that want to run inside [`RunFixedMainLoop`]
 /// but before or after the fixed update logic. Systems in this set
@@ -57,6 +99,73 @@ pub enum RunFixedMainLoopSystems {
     FixedMainLoop,
     /// Runs after the fixed update logic
     AfterFixedMainLoop,
+}
+
+/// Runs first in the [`FixedMain`] schedule
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct FixedFirst;
+
+/// The schedule that contains logic that must run before [`FixedUpdate`].
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct FixedPreUpdate;
+
+/// The schedule that contains most logic, which runs at a fixed rate rather than every render frame
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct FixedUpdate;
+
+/// The schedule that runs after the  [`FixedUpdate`] schedule, for reacting to changes made in the main update logic.
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct FixedPostUpdate;
+
+/// The schedule that runs last in [`FixedMain`].
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct FixedLast;
+
+/// Defines the schedules to be run for the [`Main`] schedule, including their order
+#[derive(Resource, Debug)]
+pub struct MainScheduleOrder {
+    /// The labels to run for the main phase of the [`Main`] schedule (in the order they will be run)
+    pub labels: Vec<InternedScheduleLabel>,
+    /// The labels to run for the startup phase of the [`Main`] schedule (in the order they will be run)
+    pub startup_labels: Vec<InternedScheduleLabel>,
+}
+
+impl Default for MainScheduleOrder {
+    fn default() -> Self {
+        Self {
+            labels: vec![
+                First.intern(),
+                PreUpdate.intern(),
+                RunFixedMainLoop.intern(),
+                Update.intern(),
+                SpawnScene.intern(),
+                PostUpdate.intern(),
+                Last.intern(),
+            ],
+            startup_labels: vec![PreStartup.intern(), Startup.intern(), PostStartup.intern()],
+        }
+    }
+}
+
+/// Defines the schedules to be run for the [`FixedMain`] schedule, including their order
+#[derive(Resource, Debug)]
+pub struct FixedMainScheduleOrder {
+    /// The labels to run for the [`FixedMain`] schedule (in the order they will be run
+    pub labels: Vec<InternedScheduleLabel>,
+}
+
+impl Default for FixedMainScheduleOrder {
+    fn default() -> Self {
+        Self {
+            labels: vec![
+                FixedFirst.intern(),
+                FixedPreUpdate.intern(),
+                FixedUpdate.intern(),
+                FixedPostUpdate.intern(),
+                FixedLast.intern(),
+            ]
+        }
+    }
 }
 
 /// Initializes the [`Main`] schedule, sub schedules, and resources for a given [`App`]
@@ -75,17 +184,18 @@ impl Plugin for MainSchedulePlugin {
         app.add_schedule(main_schedule)
             .add_schedule(fixed_main_schedule)
             .add_schedule(fixed_main_loop_schedule)
-            // .add_systems(Main, Main::run_main)
-            // .add_systems(FixedMain, FixedMain::run_fixed_main)
-            // .configure_sets(
-            //     RunFixedMainLoop,
-            //     (
-            //         RunFixedMainLoopSystems::BeforeFixedMainLoop,
-            //         RunFixedMainLoopSystems::FixedMainLoop,
-            //         RunFixedMainLoopSystems::AfterFixedMainLoop,
-            //     )
-            //         .chain(),
-            // )
-            ;
+            .init_resource::<MainScheduleOrder>()
+            .init_resource::<FixedMainScheduleOrder>()
+            .add_systems(Main, Main::run_main)
+            .add_systems(FixedMain, FixedMain::run_fixed_main)
+            .configure_sets(
+                RunFixedMainLoop,
+                (
+                    RunFixedMainLoopSystems::BeforeFixedMainLoop,
+                    RunFixedMainLoopSystems::FixedMainLoop,
+                    RunFixedMainLoopSystems::AfterFixedMainLoop,
+                )
+                    .chain(),
+            );
     }
 }

@@ -15,3 +15,4 @@ cfg::alloc! {
 pub mod hash;
 pub mod ptr;
 pub mod sync;
+pub mod cell;

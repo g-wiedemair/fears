@@ -1,14 +1,12 @@
 //! Types that detect when their internal data mutate
 
+use crate::{component::{Tick, TickCells}, resource::Resource};
 use core::{
     marker::PhantomData,
     ops::{Deref, DerefMut},
     panic::Location,
 };
-
 use feap_core::ptr::{PtrMut, UnsafeCellDeref};
-
-use crate::component::{Tick, TickCells};
 
 /// Types that can read change detection information
 /// This change detection is controlled by [`DetectChangesMut`] types such as [`RestMut`]
@@ -84,6 +82,18 @@ macro_rules! change_detection_mut_impl {
             }
         }
     }
+}
+
+/// Shared borrow of a [`Resource`]
+///
+pub struct Res<'w, T: ?Sized + Resource> {
+    pub(crate) value: &'w T,
+}
+
+/// Unique mutable borrow of a [`Resource`]
+///
+pub struct ResMut<'w, T: ?Sized + Resource> {
+    pub(crate) value: &'w mut T,
 }
 
 /// A value that contains a `T` if the `track_location` feature is enabled
