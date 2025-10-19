@@ -10,6 +10,7 @@ use crate::{
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use variadics_please::all_tuples;
+use crate::query::FilteredAccessSet;
 
 /// A function system that runs with exclusive [`World`] access
 ///
@@ -55,6 +56,11 @@ where
 {
     type In = F::In;
     type Out = Out;
+    
+    #[inline]
+    fn initialize(&mut self, world: &mut World) -> FilteredAccessSet {
+        todo!()
+    }
 
     fn default_system_sets(&self) -> Vec<InternedSystemSet> {
         let set = SystemTypeSet::<Self>::new();

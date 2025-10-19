@@ -3,8 +3,10 @@ use core::{
     fmt::Debug,
     hash::{BuildHasher, Hash},
 };
+use super::tarjan_scc::new_tarjan_scc;
 use feap_core::{collections::HashSet, hash::FixedHasher};
 use indexmap::IndexMap;
+use smallvec::SmallVec;
 
 /// Types that can be used as node identifiers in a [`DiGraph`]/[`UnGraph`]
 pub trait GraphNodeId: Copy + Eq + Hash + Ord + Debug {
@@ -80,6 +82,37 @@ impl<const DIRECTED: bool, N: GraphNodeId, S: BuildHasher> Graph<DIRECTED, N, S>
         N::Edge::from((a, b))
     }
 
+    /// Returns an iterator over the nodes of the graph
+    pub fn nodes(&self) -> impl DoubleEndedIterator<Item = N> + ExactSizeIterator<Item = N> + '_ {
+        self.nodes.keys().copied()
+    }
+
+    /// Return the number of nodes in the graph
+    pub fn node_count(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Returns an iterator of all nodes with an edge starting from `a`
+    pub fn neighbors(&self, a: N) -> impl DoubleEndedIterator<Item = N> + '_ {
+        let iter = match self.nodes.get(&a) {
+            Some(neigh) => neigh.iter(),
+            None => [].iter(),
+        };
+        
+        iter.copied()
+            .map(N::Adjacent::into)
+            .filter_map(|(n, dir)| (!DIRECTED || dir == Direction::Outgoing).then_some(n))
+    }
+
+    /// Return an iterator over all edges of the graph with their weight in arbitrary order
+    pub fn all_edges(&self) -> impl ExactSizeIterator<Item = (N, N)> + '_ {
+        self.edges.iter().copied().map(N::Edge::into)
+    }
+    
+    pub(crate) fn to_index(&self, ix: N) -> usize {
+        self.nodes.get_index_of(&ix).unwrap()
+    }
+
     /// Add node `n` from the grapph
     pub fn add_node(&mut self, n: N) {
         self.nodes.entry(n).or_default();
@@ -101,5 +134,11 @@ impl<const DIRECTED: bool, N: GraphNodeId, S: BuildHasher> Graph<DIRECTED, N, S>
             }
         }
     }
-    
+}
+
+impl<N: GraphNodeId, S: BuildHasher> DiGraph<N, S> {
+    /// Iterate over all *Strongly Connected Components* in this graph
+    pub(crate) fn iter_sccs(&self) -> impl Iterator<Item = SmallVec<[N; 4]>> + '_ {
+        super::tarjan_scc::new_tarjan_scc(self)
+    }
 }

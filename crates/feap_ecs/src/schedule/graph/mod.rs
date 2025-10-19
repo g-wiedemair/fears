@@ -1,15 +1,22 @@
 mod graph_map;
+mod tarjan_scc;
 
 pub use graph_map::{DiGraph, Direction, GraphNodeId};
 
 use super::{
-    BoxedCondition, Chain, InternedSystemSet, IntoScheduleConfigs,
+    BoxedCondition, Chain, InternedScheduleLabel, InternedSystemSet, IntoScheduleConfigs,
     config::{Schedulable, ScheduleConfig, ScheduleConfigs},
+    error::{ScheduleBuildError, ScheduleBuildWarning},
+    executor::SystemSchedule,
     node::{NodeId, SystemKey, SystemSetKey, SystemSets, Systems},
     pass::ScheduleBuildPassObj,
 };
-use crate::system::ScheduleSystem;
-use alloc::{boxed::Box, collections::BTreeMap, vec::Vec};
+use crate::{component::ComponentId, system::ScheduleSystem, world::World};
+use alloc::{
+    boxed::Box,
+    collections::{BTreeMap, BTreeSet},
+    vec::Vec,
+};
 use core::any::{Any, TypeId};
 use feap_utils::map::TypeIdMap;
 
@@ -36,7 +43,7 @@ pub struct ScheduleGraph {
     /// Directed acyclic graph of the dependency (which systems/sets have to run before which other others
     dependency: Dag<NodeId>,
 
-    changed: bool,
+    pub(super) changed: bool,
     passes: BTreeMap<TypeId, Box<dyn ScheduleBuildPassObj>>,
 }
 
@@ -92,7 +99,7 @@ impl ScheduleGraph {
                 for current in configs {
                     let current_result = self.process_configs(current, collect_nodes || is_chained);
                     densely_chained &= current_result.densely_chained;
-                    
+
                     if let Chain::Chained(chain_options) = &metadata {
                         // If the current result is densely chained, we only need to chain the first node
                         let current_nodes = if current_result.densely_chained {
@@ -102,19 +109,23 @@ impl ScheduleGraph {
                         };
                         // If the previous result was densely chained, we only need to chain the last node
                         let previous_nodes = if previous_result.densely_chained {
-                            &previous_result.nodes[previous_result.nodes.len()-1..]
+                            &previous_result.nodes[previous_result.nodes.len() - 1..]
                         } else {
                             &previous_result.nodes
                         };
-                        
+
                         for previous_node in previous_nodes {
                             for current_node in current_nodes {
                                 self.dependency
                                     .graph
                                     .add_edge(*previous_node, *current_node);
-                                
+
                                 for pass in self.passes.values_mut() {
-                                    pass.add_dependency(*previous_node, *current_node, chain_options);
+                                    pass.add_dependency(
+                                        *previous_node,
+                                        *current_node,
+                                        chain_options,
+                                    );
                                 }
                             }
                         }
@@ -122,7 +133,7 @@ impl ScheduleGraph {
                     if collect_nodes {
                         todo!()
                     }
-                    
+
                     previous_result = current_result;
                 }
                 if collect_nodes {
@@ -239,6 +250,108 @@ impl ScheduleGraph {
             Ambiguity::Check => (),
         }
     }
+
+    /// Initializes any newly-added systems and conditions by calling [`System::initialize`]
+    pub fn initialize(&mut self, world: &mut World) {
+        self.systems.initialize(world);
+        self.system_sets.initialize(world);
+    }
+
+    /// Tries to topologically sort `graph`
+    /// If the graph is acyclic, returns [`Ok`] with the list of [`NodeId`] in a valid
+    /// topological order. If the graph contains cycles, returns [`Err`] with the list of
+    /// strongly-connected components that contain cycles (also in a valid topological order)
+    /// If the graph contain cycles, then an error is returned
+    pub fn topsort_graph<N: GraphNodeId + Into<NodeId>>(
+        &self,
+        graph: &DiGraph<N>,
+        report: ReportCycles,
+    ) -> Result<Vec<N>, ScheduleBuildError> {
+        // Check explicitly for self-edges
+        if let Some((node, _)) = graph.all_edges().find(|(left, right)| left == right) {
+            todo!()
+        }
+
+        // Tarjan's SCC algorithm returns elements in *reverse* topological order
+        let mut top_sorted_nodes = Vec::with_capacity(graph.node_count());
+        let mut sccs_with_cycles = Vec::new();
+        
+        for scc in graph.iter_sccs() {
+            // A strongly-connected component is a group of nodes who can all reach other
+            // through one or more paths. If an SCC contains more than one node, there must be
+            // at least one cycle within them.
+            top_sorted_nodes.extend_from_slice(&scc);
+            if scc.len() > 1 {
+                sccs_with_cycles.push(scc);
+            }
+        }
+        
+        todo!()
+    }
+
+    /// Builds an execution-optimized [`SystemSchedule`] from the current state of the graph.
+    /// Also returns any warnings that were generated during the build process.
+    ///
+    /// This method also
+    /// - checks for dependency or hierarchy cycles
+    /// - checks for system access conflicts and reports ambiguities
+    pub fn build_schedule(
+        &mut self,
+        world: &mut World,
+        ignored_ambiguities: &BTreeSet<ComponentId>,
+    ) -> Result<(SystemSchedule, Vec<ScheduleBuildWarning>), ScheduleBuildError> {
+        // let mut warnings = Vec::new();
+
+        // Check hierarchy for cycles
+        self.hierarchy.topsort =
+            self.topsort_graph(&self.hierarchy.graph, ReportCycles::Hierarchy)?;
+
+        todo!()
+    }
+
+    /// Updates the `SystemSchedule` from the `ScheduleGraph`
+    pub(super) fn update_schedule(
+        &mut self,
+        world: &mut World,
+        schedule: &mut SystemSchedule,
+        ignored_ambiguities: &BTreeSet<ComponentId>,
+        schedule_label: InternedScheduleLabel,
+    ) -> Result<Vec<ScheduleBuildWarning>, ScheduleBuildError> {
+        if !self.systems.is_initialized() || !self.system_sets.is_initialized() {
+            return Err(ScheduleBuildError::Uninitialized);
+        }
+
+        // Move systems out of old schedule
+        for ((key, system), conditions) in schedule
+            .system_ids
+            .drain(..)
+            .zip(schedule.systems.drain(..))
+            .zip(schedule.system_conditions.drain(..))
+        {
+            todo!()
+        }
+
+        for (key, conditions) in schedule
+            .set_ids
+            .drain(..)
+            .zip(schedule.set_conditions.drain(..))
+        {
+            todo!()
+        }
+
+        let (new_schedule, warnings) = self.build_schedule(world, ignored_ambiguities)?;
+        *schedule = new_schedule;
+
+        for warning in &warnings {
+            log::warn!(
+                "{:?} schedule built successfully, however: {}",
+                schedule_label,
+                warning.to_string(self, world)
+            );
+        }
+
+        todo!()
+    }
 }
 
 /// An edge to be added to the dependency graph
@@ -307,4 +420,12 @@ impl ProcessScheduleConfig for InternedSystemSet {
     fn process_config(schedule_graph: &mut ScheduleGraph, config: ScheduleConfig<Self>) -> NodeId {
         NodeId::Set(schedule_graph.configure_set_inner(config))
     }
+}
+
+/// Used to select the appropriate reporting function
+pub enum ReportCycles {
+    /// When sets contain themselves
+    Hierarchy,
+    /// When the graph is no longer a DAG
+    Dependency,
 }

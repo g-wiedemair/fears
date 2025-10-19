@@ -85,6 +85,14 @@ macro_rules! impl_sparse_set {
                     .get(index)
                     .map(|dense_index| unsafe { self.dense.get_unchecked(dense_index.get()) })
             }
+
+            /// Returns a mutable reference to the value for `index`
+            pub fn get_mut(&mut self, index: I) -> Option<&mut V> {
+                let dense = &mut self.dense;
+                self.sparse.get(index).map(move |dense_index| {
+                    unsafe { dense.get_unchecked_mut(dense_index.get()) }
+                })
+            }
         }
     };
 }

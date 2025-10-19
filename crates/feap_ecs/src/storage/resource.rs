@@ -1,5 +1,5 @@
 use crate::{
-    change_detection::MaybeLocation,
+    change_detection::{MaybeLocation, MutUntyped, TicksMut},
     component::{ComponentId, Components, Tick, TickCells},
     storage::{blob_array::BlobArray, sparse_set::SparseSet},
 };
@@ -77,6 +77,16 @@ impl<const SEND: bool> ResourceData<SEND> {
 
         self.changed_by.as_ref().map(|changed_by| changed_by.deref_mut()).assign(caller);
     }
+    
+    /// Returns a mutable reference to the resource, it if exists
+    pub(crate) fn get_mut(&mut self, last_run: Tick, this_run: Tick) -> Option<MutUntyped<'_>> {
+        let (ptr, ticks, caller) = self.get_with_ticks()?;
+        Some(MutUntyped {
+          value: unsafe { ptr.assert_unique() },
+            ticks: unsafe { TicksMut::from_tick_cells(ticks, last_run, this_run)},
+            changed_by: unsafe { caller.map(|caller| caller.deref_mut())}
+        })
+    }
 
     /// Returns references to the resource and its change ticks, if it exists
     #[inline]
@@ -149,5 +159,9 @@ impl<const SEND: bool> Resources<SEND> {
         self.resources.get(component_id)
     }
 
-
+    /// Gets mutable access to a resource, if it exists
+    #[inline]
+    pub(crate) fn get_mut(&mut self, component_id: ComponentId) -> Option<&mut ResourceData<SEND>> {
+        self.resources.get_mut(component_id)
+    }
 }

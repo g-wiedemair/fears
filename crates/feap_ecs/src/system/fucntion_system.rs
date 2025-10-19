@@ -1,8 +1,41 @@
-use super::{IntoSystem, System, SystemInput, SystemParam, SystemParamItem};
-use crate::schedule::{InternedSystemSet, SystemSet, SystemTypeSet};
+use super::{IntoSystem, SystemStateFlags, System, SystemInput, SystemParam, SystemParamItem};
+use crate::{
+    component::Tick,
+    query::FilteredAccessSet,
+    schedule::{InternedSystemSet, SystemSet, SystemTypeSet},
+    world::{World, WorldId},
+};
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
+use feap_utils::debug_info::DebugName;
 use variadics_please::all_tuples;
+
+/// The metadata of a [`System`]
+#[derive(Clone)]
+pub struct SystemMeta {
+    pub(crate) name: DebugName,
+    flags: SystemStateFlags,
+    pub(crate) last_run: Tick,
+    #[cfg(feature = "trace")]
+    pub(crate) system_span: Span,
+    #[cfg(feature = "trace")]
+    pub(crate) commands_span: Span,
+}
+
+impl SystemMeta {
+    pub(crate) fn new<T>() -> Self {
+        let name = DebugName::type_name::<T>();
+        Self {
+            #[cfg(feature = "trace")]
+            system_span: info_span!(parent: None, "system", name = name.clone().as_string()),
+            #[cfg(feature = "trace")]
+            commands_span: info_span!(parent: None, "system_commands", name = name.clone().as_string()),
+            name,
+            flags: SystemStateFlags::empty(),
+            last_run: Tick::new(0),
+        }
+    }
+}
 
 /// The [`System`] counterpart of an ordinary function
 ///
@@ -14,7 +47,19 @@ where
     F: SystemParamFunction<Marker>,
 {
     func: F,
+    state: Option<FunctionSystemState<F::Param>>,
+    system_meta: SystemMeta,
     marker: PhantomData<fn() -> (Marker, Out)>,
+}
+
+/// The state of a [`FunctionSystem`], which must be initialized with [`System::initialize`]
+/// before the system can be run. A panic will occur if the system is run without being initialized
+struct FunctionSystemState<P: SystemParam> {
+    /// The cached state of the system's [`SystemParam`]s
+    param: P::State,
+    /// The id of the [`World`] this system was initialized with.
+    /// If the world passed to [`System::run_unsafe`] does not match this id, a panic will occur
+    world_id: WorldId,
 }
 
 impl<Marker, Out, F> System for FunctionSystem<Marker, Out, F>
@@ -25,6 +70,30 @@ where
 {
     type In = F::In;
     type Out = Out;
+
+    #[inline]
+    fn initialize(&mut self, world: &mut World) -> FilteredAccessSet {
+        if let Some(state) = &self.state {
+            assert_eq!(
+                state.world_id,
+                world.id(),
+                "System built with a different world than the one it was added to."
+            );
+        }
+        let state = self.state.get_or_insert_with(|| FunctionSystemState {
+            param: F::Param::init_state(world),
+            world_id: world.id(),
+        });
+        self.system_meta.last_run = world.change_tick().relative_to(Tick::MAX);
+        let mut component_access_set = FilteredAccessSet::new();
+        F::Param::init_access(
+            &state.param,
+            &mut self.system_meta,
+            &mut component_access_set,
+            world,
+        );
+        component_access_set
+    }
 
     fn default_system_sets(&self) -> Vec<InternedSystemSet> {
         let set = SystemTypeSet::<Self>::new();
@@ -47,6 +116,8 @@ where
     fn into_system(func: Self) -> Self::System {
         FunctionSystem {
             func,
+            state: None,
+            system_meta: SystemMeta::new::<F>(),
             marker: PhantomData,
         }
     }

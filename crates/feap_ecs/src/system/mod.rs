@@ -8,7 +8,7 @@ mod system_param;
 
 pub use input::SystemInput;
 pub use schedule_system::ScheduleSystem;
-pub use system::{BoxedSystem, ReadOnlySystem, System};
+pub use system::{SystemStateFlags, BoxedSystem, ReadOnlySystem, System};
 pub use system_param::{Local, SystemParam, SystemParamItem};
 
 /// Conversion trait to turn something into a [`System`]

@@ -4,6 +4,7 @@
 //!
 
 pub use atomic_ptr::AtomicUsize;
+pub use core::sync::atomic::Ordering;
 
 #[cfg(target_has_atomic = "ptr")]
 use core::sync::atomic as atomic_ptr;

@@ -23,6 +23,10 @@ feap_core = { path = "../feap_core" }
 feap_utils = { path = "../feap_utils" }
 feap_ecs_macros = { path = "macros" }
 
+thiserror.workspace = true
+log.workspace = true
+bitflags.workspace = true
+smallvec.workspace = true
 indexmap.workspace = true
 slotmap.workspace = true
 nonmax.workspace = true

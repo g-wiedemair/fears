@@ -17,6 +17,12 @@ pub trait Plugin: Downcast + Any + Send + Sync {
     fn ready(&self, _app: &App) -> bool {
         true
     }
+    
+    /// Finish adding this plugin to the [`App`], once all plugins registered are ready
+    fn finish(&self, _app: &mut App) {}
+    
+    /// Runs after all plugins are built and finished, but before the app schedule is executed
+    fn cleanup(&self, _app: &mut App) {}
 
     /// Configures a name for the [`Plugin`] which is primarily used for checking plugin
     /// uniqueness and debugging

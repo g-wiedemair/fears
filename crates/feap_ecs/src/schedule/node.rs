@@ -5,6 +5,7 @@ use super::{
 use crate::{
     query::FilteredAccessSet,
     system::{ReadOnlySystem, ScheduleSystem},
+    world::World,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt::Debug;
@@ -71,7 +72,12 @@ impl From<(NodeId, Direction)> for CompactNodeIdAndDirection {
 
 impl From<CompactNodeIdAndDirection> for (NodeId, Direction) {
     fn from(value: CompactNodeIdAndDirection) -> Self {
-        todo!()
+        let node = match value.is_system {
+            true => NodeId::System(value.key.into()),
+            false => NodeId::Set(value.key.into()),
+        };
+
+        (node, value.direction)
     }
 }
 
@@ -115,7 +121,16 @@ impl From<(NodeId, NodeId)> for CompactNodeIdPair {
 
 impl From<CompactNodeIdPair> for (NodeId, NodeId) {
     fn from(value: CompactNodeIdPair) -> Self {
-        todo!()
+        let a = match value.is_system_a {
+            true => NodeId::System(value.key_a.into()),
+            false => NodeId::Set(value.key_a.into()),
+        };
+        let b = match value.is_system_b {
+            true => NodeId::System(value.key_b.into()),
+            false => NodeId::Set(value.key_b.into()),
+        };
+
+        (a, b)
     }
 }
 
@@ -130,6 +145,11 @@ impl SystemNode {
         Self {
             inner: Some(SystemWithAccess::new(system)),
         }
+    }
+
+    /// Obtain a mutable reference to the [`SystemWithAccess`] represented by this node
+    pub fn get_mut(&mut self) -> Option<&mut SystemWithAccess> {
+        self.inner.as_mut()
     }
 }
 
@@ -205,6 +225,27 @@ impl Systems {
         self.uninit.push(key);
         key
     }
+
+    /// Initializes all systems and their conditions that have not been initialized yet
+    pub fn initialize(&mut self, world: &mut World) {
+        for key in self.uninit.drain(..) {
+            let Some(system) = self.nodes.get_mut(key).and_then(|node| node.get_mut()) else {
+                continue;
+            };
+            system.access = system.system.initialize(world);
+            let Some(conditions) = self.conditions.get_mut(key) else {
+                continue;
+            };
+            for condition in conditions {
+                condition.access = condition.condition.initialize(world);
+            }
+        }
+    }
+
+    /// Returns `true` if all systems in this container have been initialized
+    pub fn is_initialized(&self) -> bool {
+        self.uninit.is_empty()
+    }
 }
 
 /// Container for system sets in a schedule
@@ -247,5 +288,19 @@ impl SystemSets {
             self.conditions.insert(key, Vec::new());
             key
         })
+    }
+
+    /// Initializes all system sets conditions that have not been initialized yet.
+    /// Because a system set's conditions may be appended to multiple times, we
+    /// track which conditions were added since the last initialization and only initialize these
+    pub fn initialize(&mut self, world: &mut World) {
+        for uninit in self.uninit.drain(..) {
+            todo!()
+        }
+    }
+
+    /// Returns `true` if all system sets conditions in this container have been initialized
+    pub fn is_initialized(&self) -> bool {
+        self.uninit.is_empty()
     }
 }

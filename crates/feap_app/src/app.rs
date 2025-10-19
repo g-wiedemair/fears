@@ -220,6 +220,55 @@ impl App {
         self.main_mut().init_resource::<R>();
         self
     }
+
+    /// Runs [`Plugin::finish`] for each plugin. This is usually called by the event loop once all
+    /// plugins are ready
+    pub fn finish(&mut self) {
+        #[cfg(feature = "trace")]
+        let _finish_span = info_span!("plugin finish").entered();
+        // Plugins installed to main should see all sub-apps
+        // do hokey pokey with a boxed zst plugin (doesn't allocate)
+        let mut hokeypokey: Box<dyn Plugin> = Box::new(HokeyPokey);
+        for i in 0..self.main().plugin_registry.len() {
+            core::mem::swap(&mut self.main_mut().plugin_registry[i], &mut hokeypokey);
+            #[cfg(feature = "trace")]
+            let _plugin_finish_span =
+                info_span!("plugin finish", plugin = hokeypokey.name()).entered();
+            hokeypokey.finish(self);
+            core::mem::swap(&mut self.main_mut().plugin_registry[i], &mut hokeypokey);
+        }
+        self.main_mut().plugins_state = PluginsState::Finished;
+        self.sub_apps.iter_mut().skip(1).for_each(SubApp::finish);
+    }
+
+    /// Runs [`Plugin::cleanup`] for each plugin. This is usually called by the event loop after
+    /// [`App::finish`]
+    pub fn cleanup(&mut self) {
+        #[cfg(feature = "trace")]
+        let _cleanup_span = info_span!("plugin cleanup").entered();
+        // plugins installed to main should see all sub-apps
+        // do hokey pokey with a boxed zst plugin (doesn't allocate)
+        let mut hokeypokey: Box<dyn Plugin> = Box::new(HokeyPokey);
+        for i in 0..self.main().plugin_registry.len() {
+            core::mem::swap(&mut self.main_mut().plugin_registry[i], &mut hokeypokey);
+            #[cfg(feature = "trace")]
+            let _plugin_cleanup_span =
+                info_span!("plugin cleanup", plugin = hokeypokey.name()).entered();
+            hokeypokey.cleanup(self);
+            core::mem::swap(&mut self.main_mut().plugin_registry[i], &mut hokeypokey);
+        }
+        self.main_mut().plugins_state = PluginsState::Cleaned;
+        self.sub_apps.iter_mut().skip(1).for_each(SubApp::cleanup);
+    }
+    
+    /// Runs the default schedules of all sub-apps (starting with the "main" app) once
+    pub fn update(&mut self) {
+        if self.is_building_plugins() {
+            panic!("App::update() was called while a plugin was building.");
+        }
+        
+        self.sub_apps.update();
+    }
 }
 
 type RunnerFn = Box<dyn FnOnce(App) -> AppExit>;
@@ -230,10 +279,10 @@ fn run_once(mut app: App) -> AppExit {
     //     feap_tasks::tick_global_task_pools_on_main_thread();
     // }
 
-    // app.finish();
-    // app.cleanup();
+    app.finish();
+    app.cleanup();
 
-    // app.update();
+    app.update();
 
     // app.should_exit().unwrap_or(AppExit::Success)
 
@@ -246,4 +295,11 @@ fn run_once(mut app: App) -> AppExit {
 pub enum AppExit {
     /// [`App`] exited successfully.
     Success,
+}
+
+/// Used for doing hokey pokey in finish and cleanup
+struct HokeyPokey;
+
+impl Plugin for HokeyPokey {
+    fn build(&self, app: &mut App) {}
 }

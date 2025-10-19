@@ -9,6 +9,7 @@ use feap_ecs::{
     system::ScheduleSystem,
     world::World,
 };
+use tracing::info_span;
 
 feap_ecs::define_label!(
     /// A strongly-typed class of labels used to identify an [`App`]
@@ -131,6 +132,34 @@ impl SubApp {
         self.world.init_resource::<R>();
         self
     }
+
+    /// Runs [`Plugin::finish`] for each plugin
+    pub fn finish(&mut self) {
+        for i in 0..self.plugin_registry.len() {
+            todo!()
+        }
+        self.plugins_state = PluginsState::Finished;
+    }
+
+    /// Runs [`Plugin::cleanup`] for each plugin
+    pub fn cleanup(&mut self) {
+        for i in 0..self.plugin_registry.len() {
+            todo!()
+        }
+        self.plugins_state = PluginsState::Cleaned;
+    }
+
+    /// Runs the default schedule
+    /// Does not clear internal trackers used for change detection
+    pub fn run_default_schedule(&mut self) {
+        if self.is_building_plugins() {
+            panic!("SubApp::update() was called while a plugin was building.");
+        }
+
+        if let Some(label) = self.update_schedule {
+            self.world.run_schedule(label);
+        }
+    }
 }
 
 /// The collection of sub-apps that belong to an [`App`]
@@ -143,6 +172,24 @@ pub struct SubApps {
 }
 
 impl SubApps {
+    /// Calls [`update`] for the main sub-app, and then calls
+    ///[`extract`] and [`update`] for the rest
+    pub fn update(&mut self) {
+        #[cfg(feature = "trace")]
+        let _feap_update_span = info_span!("update").entered();
+        {
+            #[cfg(feature = "trace")]
+            let _feap_frame_update_span = info_span!("main app").entered();
+            self.main.run_default_schedule();
+        }
+        for (_label, sub_app) in self.sub_apps.iter_mut() {
+            todo!()
+        }
+
+        todo!()
+        // self.main.world.clear_trackers();
+    }
+
     /// Returns an iterator over the sub-apps (starting with the main one)
     pub fn iter(&self) -> impl Iterator<Item = &SubApp> + '_ {
         core::iter::once(&self.main).chain(self.sub_apps.values())
