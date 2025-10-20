@@ -1,6 +1,6 @@
 use super::{
-    BoxedCondition, InternedSystemSet,
-    graph::{Direction, GraphNodeId},
+    graph::{Direction, GraphNodeId}, BoxedCondition, InternedSystemSet,
+    SystemSet,
 };
 use crate::{
     query::FilteredAccessSet,
@@ -8,15 +8,42 @@ use crate::{
     world::World,
 };
 use alloc::{boxed::Box, vec::Vec};
-use core::fmt::Debug;
+use core::{fmt::Debug, ops::Index};
 use feap_core::collections::HashMap;
-use slotmap::{Key, KeyData, SecondaryMap, SlotMap, new_key_type};
+use slotmap::{new_key_type, Key, KeyData, SecondaryMap, SlotMap};
 
 new_key_type! {
     /// A unique identifier for a system in a [`ScheduleGraph`]
     pub struct SystemKey;
     /// A unique identifier for a system set in a [`ScheduleGraph`]
     pub struct SystemSetKey;
+}
+
+impl GraphNodeId for SystemKey {
+    type Adjacent = (SystemKey, Direction);
+    type Edge = (SystemKey, SystemKey);
+}
+
+impl TryFrom<NodeId> for SystemKey {
+    type Error = SystemSetKey;
+
+    fn try_from(value: NodeId) -> Result<Self, Self::Error> {
+        match value {
+            NodeId::System(key) => Ok(key),
+            NodeId::Set(key) => Err(key),
+        }
+    }
+}
+
+impl TryFrom<NodeId> for SystemSetKey {
+    type Error = SystemKey;
+
+    fn try_from(value: NodeId) -> Result<Self, Self::Error> {
+        match value {
+            NodeId::System(key) => Err(key),
+            NodeId::Set(key) => Ok(key),
+        }
+    }
 }
 
 /// Unique indentifier for a system or system set stored in a [`ScheduleGraph`]
@@ -38,6 +65,18 @@ impl NodeId {
 impl GraphNodeId for NodeId {
     type Adjacent = CompactNodeIdAndDirection;
     type Edge = CompactNodeIdPair;
+}
+
+impl From<SystemKey> for NodeId {
+    fn from(key: SystemKey) -> Self {
+        NodeId::System(key)
+    }
+}
+
+impl From<SystemSetKey> for NodeId {
+    fn from(key: SystemSetKey) -> Self {
+        NodeId::Set(key)
+    }
 }
 
 /// Compact storage of a [`NodeId`] and a [`Direction`]
@@ -204,6 +243,11 @@ pub struct Systems {
 }
 
 impl Systems {
+    /// Returns the number of systems in this container
+    pub fn len(&self) -> usize {
+        self.nodes.len()
+    }
+
     /// Inserts a new system into the container, along with its conditions,
     /// and queues it to be initialized later in [`System::initialize`]
     ///
@@ -265,6 +309,11 @@ pub struct SystemSets {
 struct UninitializedSet {}
 
 impl SystemSets {
+    /// Returns the number of system sets in this container
+    pub fn len(&self) -> usize {
+        self.sets.len()
+    }
+
     /// Inserts conditions for a system set into the container, and queues the
     /// newly added conditions to be initialized later in [`SystemSets::initialize`]
     ///
@@ -278,6 +327,11 @@ impl SystemSets {
             todo!()
         }
         key
+    }
+
+    /// Returns a reference to the system set with the given key, if it exists
+    pub fn get(&self, key: SystemSetKey) -> Option<&dyn SystemSet> {
+        self.sets.get(key).map(|set| &**set)
     }
 
     /// Returns the key for the given system set, inserting it into this
@@ -302,5 +356,19 @@ impl SystemSets {
     /// Returns `true` if all system sets conditions in this container have been initialized
     pub fn is_initialized(&self) -> bool {
         self.uninit.is_empty()
+    }
+}
+
+impl Index<SystemSetKey> for SystemSets {
+    type Output = dyn SystemSet;
+
+    #[track_caller]
+    fn index(&self, key: SystemSetKey) -> &Self::Output {
+        self.get(key).unwrap_or_else(|| {
+            panic!(
+                "System set with key {:?} does not exist in the schedule",
+                key
+            )
+        })
     }
 }

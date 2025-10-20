@@ -6,16 +6,15 @@ use crate::{
 use core::panic::AssertUnwindSafe;
 use feap_core::collections::HashMap;
 use feap_ecs::{
-    schedule::{IntoScheduleConfigs, Schedule, ScheduleLabel},
+    schedule::{IntoScheduleConfigs, Schedule, ScheduleLabel, InternedSystemSet},
     system::ScheduleSystem,
+    resource::Resource,
+    world::FromWorld,
 };
 
 #[cfg(feature = "trace")]
 use tracing::info_span;
-
-use feap_ecs::resource::Resource;
-use feap_ecs::schedule::InternedSystemSet;
-use feap_ecs::world::FromWorld;
+ 
 #[cfg(feature = "std")]
 use std::panic::{catch_unwind, resume_unwind};
 

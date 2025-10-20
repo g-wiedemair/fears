@@ -257,6 +257,12 @@ impl<T> HashSet<T, FixedHasher> {
     pub const fn new() -> Self {
         Self::with_hasher(FixedHasher)
     }
+
+    /// Creates an empty [`HashSet`] with the specified capacity
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self::with_capacity_and_hasher(capacity, FixedHasher)
+    }
 }
 
 impl<T, S> HashSet<T, S> {

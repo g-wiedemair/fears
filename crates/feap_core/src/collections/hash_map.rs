@@ -275,6 +275,12 @@ where
     K: Eq + Hash,
     S: BuildHasher,
 {
+    /// Creates an empty [`HashMap`] with the specified capacity, using `hash_builder` to hash the keys
+    #[inline]
+    pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> Self {
+        Self(hb::HashMap::with_capacity_and_hasher(capacity, hash_builder))
+    }
+    
     /// Returns a reference to the value corresponding to the key
     #[inline]
     pub fn get<Q>(&self, k: &Q) -> Option<&V>

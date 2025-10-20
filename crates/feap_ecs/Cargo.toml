@@ -26,6 +26,7 @@ feap_ecs_macros = { path = "macros" }
 thiserror.workspace = true
 log.workspace = true
 bitflags.workspace = true
+fixedbitset.workspace = true
 smallvec.workspace = true
 indexmap.workspace = true
 slotmap.workspace = true

@@ -1,16 +1,17 @@
 use crate::{
+    component::Tick,
+    query::FilteredAccessSet,
     schedule::{InternedSystemSet, SystemSet, SystemTypeSet},
     system::{
         IntoSystem, System, SystemInput,
         exclusive_system_param::{ExclusiveSystemParam, ExclusiveSystemParamItem},
-        fucntion_system::IntoResult,
+        fucntion_system::{IntoResult, SystemMeta},
     },
     world::World,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 use variadics_please::all_tuples;
-use crate::query::FilteredAccessSet;
 
 /// A function system that runs with exclusive [`World`] access
 ///
@@ -21,6 +22,8 @@ where
     F: ExclusiveSystemParamFunction<Marker>,
 {
     func: F,
+    param_state: Option<<F::Param as ExclusiveSystemParam>::State>,
+    system_meta: SystemMeta,
     marker: PhantomData<fn() -> (Marker, Out)>,
 }
 
@@ -40,8 +43,8 @@ where
     fn into_system(func: Self) -> Self::System {
         ExclusiveFunctionSystem {
             func,
-            // param_state: None,
-            // system_meta: SystemMeta::new::<F>(),
+            param_state: None,
+            system_meta: SystemMeta::new::<F>(),
             marker: PhantomData,
         }
     }
@@ -56,10 +59,12 @@ where
 {
     type In = F::In;
     type Out = Out;
-    
+
     #[inline]
     fn initialize(&mut self, world: &mut World) -> FilteredAccessSet {
-        todo!()
+        self.system_meta.last_run = world.change_tick().relative_to(Tick::MAX);
+        self.param_state = Some(F::Param::init(world, &mut self.system_meta));
+        FilteredAccessSet::new()
     }
 
     fn default_system_sets(&self) -> Vec<InternedSystemSet> {

@@ -8,8 +8,12 @@ use alloc::{string::String, vec::Vec};
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
 pub enum ScheduleBuildError {
+    #[error("`{0:?}` and `{1:?}` have both `in_set` and `before`-`after` relationships (these might be transitive). This combination is unsolvable as a system cannot run before or after a set it belongs to.")]
+    CrossDependency(NodeId, NodeId),
     #[error("Tried to run a schedule before all of its systems have been initialized.")]
     Uninitialized,
+    #[error(transparent)]
+    Elevated(#[from] ScheduleBuildWarning)
 }
 
 impl ScheduleBuildError {
@@ -23,8 +27,6 @@ impl ScheduleBuildError {
     pub fn to_string(&self, graph: &ScheduleGraph, world: &World) -> String {
         todo!()
     }
-    
-    
 }
 
 /// Category of warnings encountered during [`Schedule::initialize`]
@@ -34,7 +36,7 @@ pub enum ScheduleBuildWarning {
     /// The hierarchy of system sets contains redundant edges
     /// This warning is **enabled** by default, but can be disabled
     #[error("The hierarchy of system sets contains redundant edges: {0:?}")]
-    HierarchRedundancy(Vec<(NodeId, NodeId)>),
+    HierarchyRedundancy(Vec<(NodeId, NodeId)>),
 }
 
 impl ScheduleBuildWarning {

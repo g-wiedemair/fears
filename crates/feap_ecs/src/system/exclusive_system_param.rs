@@ -1,3 +1,4 @@
+use crate::{system::fucntion_system::SystemMeta, world::World};
 use variadics_please::all_tuples;
 
 /// A parameter that can be used in an exclusive system (a system with an `&mut World` parameter
@@ -11,6 +12,9 @@ pub trait ExclusiveSystemParam: Sized {
     type State: Send + Sync + 'static;
     /// The item type returned when constructing this system param
     type Item<'s>: ExclusiveSystemParam<State = Self::State>;
+
+    /// Creates a new instance of this param's [`State`]
+    fn init(world: &mut World, system_meta: &mut SystemMeta) -> Self::State;
 }
 
 /// Shorthand way of accessing the associated type [`ExclusiveSystemParam::Item`]
@@ -35,6 +39,11 @@ macro_rules! impl_exclusive_system_param_tuple {
         impl<$($param: ExclusiveSystemParam),*> ExclusiveSystemParam for ($($param,)*) {
             type State = ($($param::State,)*);
             type Item<'s> = ($($param::Item<'s>,)*);
+            
+            #[inline]
+            fn init(world: &mut World, system_meta: &mut SystemMeta) -> Self::State {
+                (($($param::init(world, system_meta),)*))
+            }
         }
     };
 }

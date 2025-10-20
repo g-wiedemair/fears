@@ -1,24 +1,21 @@
 mod graph_map;
+mod schedule_graph;
 mod tarjan_scc;
 
-pub use graph_map::{DiGraph, Direction, GraphNodeId};
+pub use graph_map::{DiGraph, Direction, GraphNodeId, UnGraph};
+pub use schedule_graph::ScheduleGraph;
 
 use super::{
-    BoxedCondition, Chain, InternedScheduleLabel, InternedSystemSet, IntoScheduleConfigs,
-    config::{Schedulable, ScheduleConfig, ScheduleConfigs},
-    error::{ScheduleBuildError, ScheduleBuildWarning},
-    executor::SystemSchedule,
-    node::{NodeId, SystemKey, SystemSetKey, SystemSets, Systems},
-    pass::ScheduleBuildPassObj,
+    config::{Schedulable, ScheduleConfig},
+    node::NodeId,
+    InternedSystemSet,
 };
-use crate::{component::ComponentId, system::ScheduleSystem, world::World};
-use alloc::{
-    boxed::Box,
-    collections::{BTreeMap, BTreeSet},
-    vec::Vec,
-};
-use core::any::{Any, TypeId};
+use crate::system::ScheduleSystem;
+use alloc::{boxed::Box, vec::Vec};
+use core::any::Any;
+use feap_core::collections::{HashMap, HashSet};
 use feap_utils::map::TypeIdMap;
+use fixedbitset::FixedBitSet;
 
 /// Metadata about how the node fits in the schedule graph
 #[derive(Default)]
@@ -28,330 +25,6 @@ pub struct GraphInfo {
     /// The sets that the node depends on (must run before or after)
     pub(crate) dependencies: Vec<Dependency>,
     pub(crate) ambiguous_with: Ambiguity,
-}
-
-/// Metadata for a [`Schedule`]
-/// The order isn't optimized
-#[derive(Default)]
-pub struct ScheduleGraph {
-    /// Container of systems in the schedule
-    pub systems: Systems,
-    /// Container of system sets in the schedule
-    pub system_sets: SystemSets,
-    /// Directed acyclic graph of the hierarchy (which systems/sets are children of which sets)
-    hierarchy: Dag<NodeId>,
-    /// Directed acyclic graph of the dependency (which systems/sets have to run before which other others
-    dependency: Dag<NodeId>,
-
-    pub(super) changed: bool,
-    passes: BTreeMap<TypeId, Box<dyn ScheduleBuildPassObj>>,
-}
-
-impl ScheduleGraph {
-    /// Creates an empty [`ScheduleGraph`] with default settings
-    pub fn new() -> Self {
-        Self {
-            systems: Systems::default(),
-            system_sets: SystemSets::default(),
-            hierarchy: Dag::default(),
-            dependency: Dag::default(),
-            changed: false,
-            passes: BTreeMap::default(),
-        }
-    }
-
-    /// Adds the config nodes to the graph
-    #[track_caller]
-    pub(super) fn process_configs<
-        T: ProcessScheduleConfig + Schedulable<Metadata = GraphInfo, GroupMetadata = Chain>,
-    >(
-        &mut self,
-        configs: ScheduleConfigs<T>,
-        collect_nodes: bool,
-    ) -> ProcessConfigsResult {
-        match configs {
-            ScheduleConfigs::ScheduleConfig(config) => self.process_config(config, collect_nodes),
-            ScheduleConfigs::Configs {
-                metadata,
-                mut configs,
-                collective_conditions,
-            } => {
-                self.apply_collective_conditions(&mut configs, collective_conditions);
-
-                let is_chained = matches!(metadata, Chain::Chained(_));
-
-                // Densely chained if
-                // - chained and all configs in the chain are densely chained, or
-                // - unchained with a single densely chained config
-                let mut densely_chained = is_chained || configs.len() == 1;
-                let mut configs = configs.into_iter();
-                let mut nodes = Vec::new();
-
-                let Some(first) = configs.next() else {
-                    return ProcessConfigsResult {
-                        nodes: Vec::new(),
-                        densely_chained,
-                    };
-                };
-                let mut previous_result = self.process_configs(first, collect_nodes || is_chained);
-                densely_chained &= previous_result.densely_chained;
-
-                for current in configs {
-                    let current_result = self.process_configs(current, collect_nodes || is_chained);
-                    densely_chained &= current_result.densely_chained;
-
-                    if let Chain::Chained(chain_options) = &metadata {
-                        // If the current result is densely chained, we only need to chain the first node
-                        let current_nodes = if current_result.densely_chained {
-                            &current_result.nodes[..1]
-                        } else {
-                            &current_result.nodes
-                        };
-                        // If the previous result was densely chained, we only need to chain the last node
-                        let previous_nodes = if previous_result.densely_chained {
-                            &previous_result.nodes[previous_result.nodes.len() - 1..]
-                        } else {
-                            &previous_result.nodes
-                        };
-
-                        for previous_node in previous_nodes {
-                            for current_node in current_nodes {
-                                self.dependency
-                                    .graph
-                                    .add_edge(*previous_node, *current_node);
-
-                                for pass in self.passes.values_mut() {
-                                    pass.add_dependency(
-                                        *previous_node,
-                                        *current_node,
-                                        chain_options,
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    if collect_nodes {
-                        todo!()
-                    }
-
-                    previous_result = current_result;
-                }
-                if collect_nodes {
-                    todo!()
-                }
-
-                ProcessConfigsResult {
-                    nodes,
-                    densely_chained,
-                }
-            }
-        }
-    }
-
-    fn process_config<T: ProcessScheduleConfig + Schedulable>(
-        &mut self,
-        config: ScheduleConfig<T>,
-        collect_nodes: bool,
-    ) -> ProcessConfigsResult {
-        ProcessConfigsResult {
-            densely_chained: true,
-            nodes: collect_nodes
-                .then_some(T::process_config(self, config))
-                .into_iter()
-                .collect(),
-        }
-    }
-
-    fn apply_collective_conditions<
-        T: ProcessScheduleConfig + Schedulable<Metadata = GraphInfo, GroupMetadata = Chain>,
-    >(
-        &mut self,
-        configs: &mut [ScheduleConfigs<T>],
-        collective_conditions: Vec<BoxedCondition>,
-    ) {
-        if !collective_conditions.is_empty() {
-            todo!()
-        }
-    }
-
-    /// Add a [`ScheduleConfig`] to the graph, including its dependencies and conditions
-    fn add_system_inner(&mut self, config: ScheduleConfig<ScheduleSystem>) -> SystemKey {
-        let key = self.systems.insert(config.node, config.conditions);
-
-        // graph updates are immediate
-        self.update_graphs(NodeId::System(key), config.metadata);
-
-        key
-    }
-
-    #[track_caller]
-    pub(super) fn configure_sets<M>(
-        &mut self,
-        sets: impl IntoScheduleConfigs<InternedSystemSet, M>,
-    ) {
-        self.process_configs(sets.into_configs(), false);
-    }
-
-    /// Add a single `ScheduleConfig` to the graph, including its dependencies and conditions
-    fn configure_set_inner(&mut self, config: ScheduleConfig<InternedSystemSet>) -> SystemSetKey {
-        let key = self.system_sets.insert(config.node, config.conditions);
-
-        // graph update are immediate
-        self.update_graphs(NodeId::Set(key), config.metadata);
-
-        key
-    }
-
-    /// Update the internal graphs (hierarchy, dependency, ambiguity) by adding a single [`GraphInfo`]
-    fn update_graphs(&mut self, id: NodeId, graph_info: GraphInfo) {
-        self.changed = true;
-
-        let GraphInfo {
-            hierarchy: sets,
-            dependencies,
-            ambiguous_with,
-            ..
-        } = graph_info;
-
-        self.hierarchy.graph.add_node(id);
-        self.dependency.graph.add_node(id);
-
-        for key in sets
-            .into_iter()
-            .map(|set| self.system_sets.get_key_or_insert(set))
-        {
-            self.hierarchy.graph.add_edge(NodeId::Set(key), id);
-
-            // ensure set also appears in dependency graph
-            self.dependency.graph.add_node(NodeId::Set(key));
-        }
-
-        for (kind, key, options) in
-            dependencies
-                .into_iter()
-                .map(|Dependency { kind, set, options }| {
-                    (kind, self.system_sets.get_key_or_insert(set), options)
-                })
-        {
-            let (lhs, rhs) = match kind {
-                DependencyKind::Before => (id, NodeId::Set(key)),
-                DependencyKind::After => (NodeId::Set(key), id),
-            };
-            self.dependency.graph.add_edge(lhs, rhs);
-            for pass in self.passes.values_mut() {
-                pass.add_dependency(lhs, rhs, &options);
-            }
-
-            // ensure set also appears in hierarchy graph
-            self.hierarchy.graph.add_node(NodeId::Set(key));
-        }
-
-        match ambiguous_with {
-            Ambiguity::Check => (),
-        }
-    }
-
-    /// Initializes any newly-added systems and conditions by calling [`System::initialize`]
-    pub fn initialize(&mut self, world: &mut World) {
-        self.systems.initialize(world);
-        self.system_sets.initialize(world);
-    }
-
-    /// Tries to topologically sort `graph`
-    /// If the graph is acyclic, returns [`Ok`] with the list of [`NodeId`] in a valid
-    /// topological order. If the graph contains cycles, returns [`Err`] with the list of
-    /// strongly-connected components that contain cycles (also in a valid topological order)
-    /// If the graph contain cycles, then an error is returned
-    pub fn topsort_graph<N: GraphNodeId + Into<NodeId>>(
-        &self,
-        graph: &DiGraph<N>,
-        report: ReportCycles,
-    ) -> Result<Vec<N>, ScheduleBuildError> {
-        // Check explicitly for self-edges
-        if let Some((node, _)) = graph.all_edges().find(|(left, right)| left == right) {
-            todo!()
-        }
-
-        // Tarjan's SCC algorithm returns elements in *reverse* topological order
-        let mut top_sorted_nodes = Vec::with_capacity(graph.node_count());
-        let mut sccs_with_cycles = Vec::new();
-        
-        for scc in graph.iter_sccs() {
-            // A strongly-connected component is a group of nodes who can all reach other
-            // through one or more paths. If an SCC contains more than one node, there must be
-            // at least one cycle within them.
-            top_sorted_nodes.extend_from_slice(&scc);
-            if scc.len() > 1 {
-                sccs_with_cycles.push(scc);
-            }
-        }
-        
-        todo!()
-    }
-
-    /// Builds an execution-optimized [`SystemSchedule`] from the current state of the graph.
-    /// Also returns any warnings that were generated during the build process.
-    ///
-    /// This method also
-    /// - checks for dependency or hierarchy cycles
-    /// - checks for system access conflicts and reports ambiguities
-    pub fn build_schedule(
-        &mut self,
-        world: &mut World,
-        ignored_ambiguities: &BTreeSet<ComponentId>,
-    ) -> Result<(SystemSchedule, Vec<ScheduleBuildWarning>), ScheduleBuildError> {
-        // let mut warnings = Vec::new();
-
-        // Check hierarchy for cycles
-        self.hierarchy.topsort =
-            self.topsort_graph(&self.hierarchy.graph, ReportCycles::Hierarchy)?;
-
-        todo!()
-    }
-
-    /// Updates the `SystemSchedule` from the `ScheduleGraph`
-    pub(super) fn update_schedule(
-        &mut self,
-        world: &mut World,
-        schedule: &mut SystemSchedule,
-        ignored_ambiguities: &BTreeSet<ComponentId>,
-        schedule_label: InternedScheduleLabel,
-    ) -> Result<Vec<ScheduleBuildWarning>, ScheduleBuildError> {
-        if !self.systems.is_initialized() || !self.system_sets.is_initialized() {
-            return Err(ScheduleBuildError::Uninitialized);
-        }
-
-        // Move systems out of old schedule
-        for ((key, system), conditions) in schedule
-            .system_ids
-            .drain(..)
-            .zip(schedule.systems.drain(..))
-            .zip(schedule.system_conditions.drain(..))
-        {
-            todo!()
-        }
-
-        for (key, conditions) in schedule
-            .set_ids
-            .drain(..)
-            .zip(schedule.set_conditions.drain(..))
-        {
-            todo!()
-        }
-
-        let (new_schedule, warnings) = self.build_schedule(world, ignored_ambiguities)?;
-        *schedule = new_schedule;
-
-        for warning in &warnings {
-            log::warn!(
-                "{:?} schedule built successfully, however: {}",
-                schedule_label,
-                warning.to_string(self, world)
-            );
-        }
-
-        todo!()
-    }
 }
 
 /// An edge to be added to the dependency graph
@@ -428,4 +101,147 @@ pub enum ReportCycles {
     Hierarchy,
     /// When the graph is no longer a DAG
     Dependency,
+}
+
+/// Stores the results of the graph analysis
+pub(crate) struct CheckGraphResults<N: GraphNodeId> {
+    /// Boolean reachability matrix for the graph
+    pub(crate) reachable: FixedBitSet,
+    /// Pairs of nodes that have a path connecting them
+    pub(crate) connected: HashSet<(N, N)>,
+    /// Pairs of nodes that don't have a path connecting them
+    pub(crate) disconnected: Vec<(N, N)>,
+    /// Edges that are redundant because a longer path exists
+    pub(crate) transitive_edges: Vec<(N, N)>,
+    /// Variant of the graph with no transitive edges
+    pub(crate) transitive_reduction: DiGraph<N>,
+    /// Variant of the graph with all possible transitive edges
+    pub(crate) transitive_closure: DiGraph<N>,
+}
+
+impl<N: GraphNodeId> Default for CheckGraphResults<N> {
+    fn default() -> Self {
+        Self {
+            reachable: FixedBitSet::new(),
+            connected: HashSet::default(),
+            disconnected: Vec::new(),
+            transitive_edges: Vec::new(),
+            transitive_reduction: DiGraph::default(),
+            transitive_closure: DiGraph::default(),
+        }
+    }
+}
+
+/// Converts 2D row-major pair of indices into a 1D array index.
+pub(crate) fn index(row: usize, col: usize, num_cols: usize) -> usize {
+    debug_assert!(col < num_cols);
+    (row * num_cols) + col
+}
+
+/// Converts a 1D array index into a 2D row-major pair of indices.
+pub(crate) fn row_col(index: usize, num_cols: usize) -> (usize, usize) {
+    (index / num_cols, index % num_cols)
+}
+
+/// Processes a DAG and computes its:
+/// - transitive reduction (along with the set of removed edges)
+/// - transitive closure
+/// - reachability matrix (as a bitset)
+/// - pairs of nodes connected by a path
+/// - pairs of nodes not connected by a path
+///
+pub(crate) fn check_graph<N: GraphNodeId>(
+    graph: &DiGraph<N>,
+    topological_order: &[N],
+) -> CheckGraphResults<N> {
+    if graph.node_count() == 0 {
+        return CheckGraphResults::default();
+    }
+
+    let n = graph.node_count();
+
+    // Build a copy of the graph where the nodes and edges appear in topsorted order
+    let mut map = <HashMap<_, _>>::with_capacity_and_hasher(n, Default::default());
+    let mut topsorted = DiGraph::<N>::default();
+    // Iterate nodes in topological order
+    for (i, &node) in topological_order.iter().enumerate() {
+        map.insert(node, i);
+        topsorted.add_node(node);
+        // Insert nodes as successors to their predecessors
+        for pred in graph.neighbors_directed(node, Direction::Incoming) {
+            topsorted.add_edge(pred, node);
+        }
+    }
+
+    let mut reachable = FixedBitSet::with_capacity(n * n);
+    let mut connected = <HashSet<_>>::default();
+    let mut disconnected = Vec::new();
+
+    let mut transitive_edges = Vec::new();
+    let mut transitive_reduction = DiGraph::default();
+    let mut transitive_closure = DiGraph::default();
+
+    let mut visited = FixedBitSet::with_capacity(n);
+
+    // Iterate nodes in topological order
+    for node in topsorted.nodes() {
+        transitive_reduction.add_node(node);
+        transitive_closure.add_node(node);
+    }
+
+    // Iterate nodes in reverse topological order
+    for a in topsorted.nodes().rev() {
+        let index_a = *map.get(&a).unwrap();
+        for b in topsorted.neighbors_directed(a, Direction::Outgoing) {
+            let index_b = *map.get(&b).unwrap();
+            debug_assert!(index_a < index_b);
+            if !visited[index_b] {
+                // Edge <a, b> is not redundant
+                transitive_reduction.add_edge(a, b);
+                transitive_closure.add_edge(a, b);
+                reachable.insert(index(index_a, index_b, n));
+
+                let successors = transitive_closure
+                    .neighbors_directed(b, Direction::Outgoing)
+                    .collect::<Vec<_>>();
+                for c in successors {
+                    let index_c = *map.get(&c).unwrap();
+                    debug_assert!(index_b < index_c);
+                    if !visited[index_c] {
+                        visited.insert(index_c);
+                        transitive_closure.add_edge(a, c);
+                        reachable.insert(index(index_a, index_c, n));
+                    }
+                }
+            } else {
+                // Edge <a, b> is redundant
+                transitive_edges.push((a, b));
+            }
+        }
+
+        visited.clear();
+    }
+
+    // Partition pairs of nodes into "connected by path" and "not connected by path"
+    for i in 0..(n - 1) {
+        // Reachable is upper triangular because the nodes were topsorted
+        for index in index(i, i + 1, n)..=index(i, n - 1, n) {
+            let (a, b) = row_col(index, n);
+            let pair = (topological_order[a], topological_order[b]);
+            if reachable[index] {
+                connected.insert(pair);
+            } else {
+                disconnected.push(pair);
+            }
+        }
+    }
+
+    CheckGraphResults {
+        reachable,
+        connected,
+        disconnected,
+        transitive_edges,
+        transitive_reduction,
+        transitive_closure,
+    }
 }

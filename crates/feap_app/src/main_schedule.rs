@@ -1,9 +1,7 @@
 use crate::Plugin;
-use feap_ecs::resource::Resource;
-use feap_ecs::schedule::InternedScheduleLabel;
 use feap_ecs::{
-    schedule::{ExecutorKind, IntoScheduleConfigs, Schedule, ScheduleLabel, SystemSet},
-    system::Local,
+    resource::Resource,
+    schedule::{ExecutorKind, InternedScheduleLabel, Schedule, ScheduleLabel, SystemSet},
     world::World,
 };
 
@@ -11,8 +9,19 @@ use feap_ecs::{
 ///
 /// By default, it will run the following schedules in the given order:
 /// On the first run of the schedule (and only on the first run), it will run:
+/// * [`PreStartup`]
+/// * [`Startup`]
+/// * [`PostStartup`]
 ///
 /// Then it will run:
+/// * [`First`]
+/// * [`PreUpdate`]
+/// * [`StateTransition`]
+/// * [`RunFixedMainLoop`]
+///   * This will run [`FixedMain`] zero to many times, based on how much time has elapsed
+/// * [`Update`]
+/// * [`PostUpdate`]
+/// * [`Last`]
 ///
 /// Note: Rendering is not executed in the main schedule by default.
 /// Instead, rendering is performed in a separate [`SubApp`]
@@ -23,7 +32,7 @@ pub struct Main;
 
 impl Main {
     /// A system that runs the "main schedule"
-    pub fn run_main(/*_world: &mut World, _run_at_least_once: Local<bool>*/) {
+    pub fn run_main(_world: &mut World /*_run_at_least_once: Local<bool>*/) {
         todo!()
     }
 }
@@ -64,6 +73,14 @@ pub struct PostUpdate;
 #[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub struct Last;
 
+/// Runs the [`FixedMain`] schedule in a loop according until all relevant elapsed time has been "consumed"
+///
+/// Note that in contrast to most other Feap schedules, systems added directly to
+/// [`RunFixedMainLoop`] will *NOT* be parallelized between each other
+///
+#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub struct RunFixedMainLoop;
+
 /// The schedule that contains systems which only run after a fixed period of time has elapsed
 ///
 /// This is run by the [`RunFixedMainLoop`] schedule.
@@ -77,14 +94,6 @@ impl FixedMain {
         todo!()
     }
 }
-
-/// Runs the [`FixedMain`] schedule in a loop according until all relevant elapsed time has been "consumed"
-///
-/// Note that in contrast to most other Feap schedules, systems added directly to
-/// [`RunFixedMainLoop`] will *NOT* be parallelized between each other
-///
-#[derive(ScheduleLabel, Clone, Debug, PartialEq, Eq, Hash, Default)]
-pub struct RunFixedMainLoop;
 
 /// Set enum for the systems that want to run inside [`RunFixedMainLoop`]
 /// but before or after the fixed update logic. Systems in this set
@@ -163,7 +172,7 @@ impl Default for FixedMainScheduleOrder {
                 FixedUpdate.intern(),
                 FixedPostUpdate.intern(),
                 FixedLast.intern(),
-            ]
+            ],
         }
     }
 }
@@ -182,20 +191,20 @@ impl Plugin for MainSchedulePlugin {
         fixed_main_loop_schedule.set_executor_kind(ExecutorKind::SingleThreaded);
 
         app.add_schedule(main_schedule)
-            .add_schedule(fixed_main_schedule)
-            .add_schedule(fixed_main_loop_schedule)
+            // .add_schedule(fixed_main_schedule)
+            // .add_schedule(fixed_main_loop_schedule)
             .init_resource::<MainScheduleOrder>()
-            .init_resource::<FixedMainScheduleOrder>()
-            .add_systems(Main, Main::run_main)
-            .add_systems(FixedMain, FixedMain::run_fixed_main)
-            .configure_sets(
-                RunFixedMainLoop,
-                (
-                    RunFixedMainLoopSystems::BeforeFixedMainLoop,
-                    RunFixedMainLoopSystems::FixedMainLoop,
-                    RunFixedMainLoopSystems::AfterFixedMainLoop,
-                )
-                    .chain(),
-            );
+            // .init_resource::<FixedMainScheduleOrder>()
+            .add_systems(Main, Main::run_main);
+        // .add_systems(FixedMain, FixedMain::run_fixed_main)
+        // .configure_sets(
+        //     RunFixedMainLoop,
+        //     (
+        //         RunFixedMainLoopSystems::BeforeFixedMainLoop,
+        //         RunFixedMainLoopSystems::FixedMainLoop,
+        //         RunFixedMainLoopSystems::AfterFixedMainLoop,
+        //     )
+        //         .chain(),
+        // );
     }
 }
