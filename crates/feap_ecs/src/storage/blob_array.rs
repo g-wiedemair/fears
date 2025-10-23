@@ -1,6 +1,7 @@
 use alloc::alloc::handle_alloc_error;
 use core::{alloc::Layout, num::NonZeroUsize, ptr::NonNull};
 use feap_core::ptr::{self, OwningPtr, Ptr, PtrMut};
+use feap_utils::OnDrop;
 
 /// A flat, typed-erased data storage type
 ///
@@ -80,6 +81,39 @@ impl BlobArray {
         let size = self.item_layout.size();
         let dst = self.get_unchecked_mut(index);
         core::ptr::copy::<u8>(value.as_ptr(), dst.as_ptr(), size);
+    }
+
+    /// Replaces the value at `index` with `value`. This function does not do any bounds checking
+    pub unsafe fn replace_unchecked(&mut self, index: usize, value: OwningPtr<'_>) {
+        #[cfg(debug_assertions)]
+        debug_assert!(self.capacity > index);
+
+        let destination = NonNull::from(unsafe { self.get_unchecked_mut(index) });
+        let source = value.as_ptr();
+
+        if let Some(drop) = self.drop {
+            self.drop = None;
+
+            // Transfer ownership of the old value out of the vector
+            let old_value = unsafe { OwningPtr::new(destination) };
+
+            // This closure will run in case `drop()` panics
+            let on_unwind = OnDrop::new(|| drop(value));
+
+            drop(old_value);
+
+            core::mem::forget(on_unwind);
+
+            self.drop = Some(drop);
+        }
+
+        unsafe {
+            core::ptr::copy_nonoverlapping::<u8>(
+                source,
+                destination.as_ptr(),
+                self.item_layout.size(),
+            );
+        }
     }
 
     /// Returns a reference to the element at `index`, without doing bounds checking

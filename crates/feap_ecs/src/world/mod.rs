@@ -1,3 +1,4 @@
+mod command_queue;
 mod deferred_world;
 mod error;
 mod identifier;
@@ -9,13 +10,18 @@ use self::error::*;
 use crate::{
     change_detection::{MaybeLocation, Mut, MutUntyped, TicksMut},
     component::{
-        CHECK_TICK_THRESHOLD, CheckChangeTicks, ComponentId, ComponentIds, Components,
-        ComponentsRegistrator, Tick,
+        CheckChangeTicks, Component, ComponentId, ComponentIds, ComponentTicks,
+        Components, ComponentsRegistrator, Tick, CHECK_TICK_THRESHOLD,
     },
-    resource::Resource,
-    schedule::{Schedule, Schedules},
-    storage::{ResourceData, Storages},
+    entity::Entities,
+    error::{DefaultErrorHandler, ErrorHandler},
+    event::Event,
+    lifecycle::RemovedComponentMessages,
     query::DebugCheckedUnwrap,
+    resource::Resource,
+    schedule::{Schedule, ScheduleLabel, Schedules},
+    storage::{ResourceData, Storages},
+    world::command_queue::RawCommandQueue,
 };
 use core::{
     any::TypeId,
@@ -24,8 +30,7 @@ use core::{
     ptr,
     sync::atomic::{AtomicU32, Ordering},
 };
-use feap_core::ptr::{OwningPtr, UnsafeCellDeref};
-use feap_ecs::schedule::ScheduleLabel;
+use feap_core::ptr::{OwningPtr, Ptr, UnsafeCellDeref};
 use feap_utils::debug_info::DebugName;
 
 /// Variant of the [`World`] where resource and component accesses take `&self`, and the responsibility to avoid
@@ -87,6 +92,15 @@ impl<'w> UnsafeWorldCell<'w> {
         );
     }
 
+    /// Gets a mutable reference to the [`World`] this [`UnsafeWorldCell`] belongs to.
+    /// This is an incredibly error-prone operation and is only valid in a small number of circumstances.
+    ///
+    #[inline]
+    pub unsafe fn world_mut(self) -> &'w mut World {
+        self.assert_allows_mutable_access();
+        unsafe { &mut *self.ptr }
+    }
+
     /// Variant of [`UnsafeWorldCell::world`] solely used for implementing this type's methods
     /// It allows having an `&World` even with live mutable borrows of components and resources
     #[inline]
@@ -113,6 +127,16 @@ impl<'w> UnsafeWorldCell<'w> {
         &unsafe { self.unsafe_world() }.storages
     }
 
+    /// Gets a reference to the resource of the given type if it exists
+    #[inline]
+    pub unsafe fn get_resource<R: Resource>(self) -> Option<&'w R> {
+        let component_id = self.components().get_valid_resource_id(TypeId::of::<R>())?;
+        unsafe {
+            self.get_resource_by_id(component_id)
+                .map(|ptr| ptr.deref::<R>())
+        }
+    }
+
     /// Gets a mutable reference to the resource of the given type if it exists
     #[inline]
     pub unsafe fn get_resource_mut<R: Resource>(self) -> Option<Mut<'w, R>> {
@@ -122,6 +146,14 @@ impl<'w> UnsafeWorldCell<'w> {
             self.get_resource_mut_by_id(component_id)
                 .map(|ptr| ptr.with_type::<R>())
         }
+    }
+
+    /// Gets a pointer to the resource with the id [`ComponentId`] if it exists.
+    /// The returned pointer must not be used to modify the resource, and mut not be
+    /// dereferenced after the borrow of the [`World`] ends
+    #[inline]
+    pub unsafe fn get_resource_by_id(self, component_id: ComponentId) -> Option<Ptr<'w>> {
+        todo!()
     }
 
     /// Gets a pointer to the resource with the id [`ComponentId`] if it exists
@@ -169,22 +201,30 @@ impl<'w> UnsafeWorldCell<'w> {
 ///
 pub struct World {
     id: WorldId,
+    pub(crate) entities: Entities,
     pub(crate) components: Components,
     pub(crate) component_ids: ComponentIds,
     pub(crate) storages: Storages,
+    pub(crate) removed_components: RemovedComponentMessages,
     pub(crate) change_tick: AtomicU32,
     pub(crate) last_change_tick: Tick,
+    pub(crate) last_check_tick: Tick,
+    pub(crate) command_queue: RawCommandQueue,
 }
 
 impl Default for World {
     fn default() -> Self {
         let mut world = Self {
             id: WorldId::new().expect("More worlds have been created than supported"),
+            entities: Entities::new(),
             components: Components::default(),
             component_ids: ComponentIds::default(),
             storages: Storages::default(),
+            removed_components: RemovedComponentMessages::default(),
             change_tick: AtomicU32::new(1),
             last_change_tick: Tick::new(0),
+            last_check_tick: Tick::new(0),
+            command_queue: RawCommandQueue::new(),
         };
         world.bootstrap();
         world
@@ -226,6 +266,11 @@ impl World {
         unsafe { ComponentsRegistrator::new(&mut self.components, &mut self.component_ids) }
     }
 
+    /// Registers a new [`Component`] type and returns the [`ComponentId`] created for it
+    pub fn register_component<T: Component>(&mut self) -> ComponentId {
+        todo!()
+    }
+
     /// Initializes a new resource and returns the [`ComponentId`] created for it
     ///
     /// If the resource already exists, nothing happens
@@ -247,7 +292,7 @@ impl World {
         }
         component_id
     }
-    
+
     /// Gets a mutable reference to the resource of type `T` if it exists,
     /// otherwise initializes the resource by calling its [`FromWorld`] implementation
     #[track_caller]
@@ -255,31 +300,32 @@ impl World {
         let caller = MaybeLocation::caller();
         let change_tick = self.change_tick();
         let last_change_tick = self.last_change_tick();
-        
+
         let component_id = self.components_registrator().register_resource::<R>();
-        if self.storages
+        if self
+            .storages
             .resources
             .get(component_id)
-            .is_none_or(|data| !data.is_present()) 
+            .is_none_or(|data| !data.is_present())
         {
             let value = R::from_world(self);
-            OwningPtr::make(value, |ptr| {
-                unsafe { self.insert_resource_by_id(component_id, ptr, caller); }
+            OwningPtr::make(value, |ptr| unsafe {
+                self.insert_resource_by_id(component_id, ptr, caller);
             });
         }
-        
+
         let data = unsafe {
-          self.storages
-              .resources
-              .get_mut(component_id)
-              .debug_checked_unwrap()
+            self.storages
+                .resources
+                .get_mut(component_id)
+                .debug_checked_unwrap()
         };
-        
+
         let data = unsafe {
             data.get_mut(last_change_tick, change_tick)
                 .debug_checked_unwrap()
         };
-        
+
         unsafe { data.with_type::<R>() }
     }
 
@@ -311,6 +357,15 @@ impl World {
             .initialize_with(component_id, &self.components)
     }
 
+    /// Returns `true` if a resource of type `R` exists.
+    #[inline]
+    pub fn contains_resource<R: Resource>(&self) -> bool {
+        self.components
+            .get_valid_resource_id(TypeId::of::<R>())
+            .and_then(|component_id| self.storages.resources.get(component_id))
+            .is_some_and(ResourceData::is_present)
+    }
+
     /// Gets a mutable reference to the resource of the given type
     /// Panics if the resource does not exist
     #[inline]
@@ -328,15 +383,69 @@ impl World {
         }
     }
 
+    /// Gets a reference to the resource of the given type if it exists
+    #[inline]
+    pub fn get_resource<R: Resource>(&self) -> Option<&R> {
+        unsafe { self.as_unsafe_world_cell_readonly().get_resource() }
+    }
+
     /// Gets a mutable reference to the resource of the given type if it exists
     #[inline]
     pub fn get_resource_mut<R: Resource>(&mut self) -> Option<Mut<'_, R>> {
         unsafe { self.as_unsafe_world_cell().get_resource_mut() }
     }
 
-    /// Applies any queued component registration
-    pub(crate) fn flush_components(&mut self) {
-        self.components_registrator().apply_queued_registrations();
+    /// Temporarily removes the requested resource from this [`World`], runs custom user code,
+    /// then re-adds the resource before returning
+    ///
+    /// This enables safe simultaneous mutable access to both a resource and the rest of the [`World`]
+    #[track_caller]
+    pub fn resource_scope<R: Resource, U>(&mut self, f: impl FnOnce(&mut World, Mut<R>) -> U) -> U {
+        self.try_resource_scope(f)
+            .unwrap_or_else(|| panic!("resource does not exist: {}", DebugName::type_name::<R>()))
+    }
+
+    fn try_resource_scope<R: Resource, U>(
+        &mut self,
+        f: impl FnOnce(&mut World, Mut<R>) -> U,
+    ) -> Option<U> {
+        let last_change_tick = self.last_change_tick();
+        let change_tick = self.change_tick();
+
+        let component_id = self.components.get_valid_resource_id(TypeId::of::<R>())?;
+        let (ptr, mut ticks, mut caller) = self
+            .storages
+            .resources
+            .get_mut(component_id)
+            .and_then(ResourceData::remove)?;
+        // Read the value onto the stack to avoid potential mut aliasing
+        let mut value = unsafe { ptr.read::<R>() };
+        let value_mut = Mut {
+            value: &mut value,
+            ticks: TicksMut {
+                added: &mut ticks.added,
+                changed: &mut ticks.changed,
+                last_run: last_change_tick,
+                this_run: change_tick,
+            },
+            changed_by: caller.as_mut(),
+        };
+
+        let result = f(self, value_mut);
+        assert!(
+            !self.contains_resource::<R>(),
+            "Resource `{}` was inserted during a call to World::resource_scope.\n\
+        This is not allowed as the original resource is reinserted to the world after the closure is invoked.",
+            DebugName::type_name::<R>()
+        );
+
+        OwningPtr::make(value, |ptr| unsafe {
+            self.storages.resources.get_mut(component_id).map(|info| {
+                info.insert_with_ticks(ptr, ticks, caller);
+            })
+        })?;
+
+        Some(result)
     }
 
     /// Runs the [`Schedule`] associated with the `label` a single time
@@ -345,6 +454,15 @@ impl World {
     /// and system state is cached
     pub fn run_schedule(&mut self, label: impl ScheduleLabel) {
         self.schedule_scope(label, |world, sched| sched.run(world));
+    }
+
+    /// Attempts to run the [`Schedule`] associated with the `label` a single time,
+    /// and returns a [`TryRunScheduleError`] if the schedule does not exist.
+    pub fn try_run_schedule(
+        &mut self,
+        label: impl ScheduleLabel,
+    ) -> Result<(), TryRunScheduleError> {
+        self.try_schedule_scope(label, |world, sched| sched.run(world))
     }
 
     /// Temporarily removes the schedule associated with `label` from the world,
@@ -386,6 +504,81 @@ impl World {
         Ok(value)
     }
 
+    /// Triggers the given [`Event`], which will run any [`Observer`]s watching for it
+    #[track_caller]
+    pub fn trigger<'a, E: Event<Trigger<'a>: Default>>(&mut self, mut event: E) {
+        self.trigger_ref_with_caller(
+            &mut event,
+            &mut <E::Trigger<'a> as Default>::default(),
+            MaybeLocation::caller(),
+        )
+    }
+
+    pub(crate) fn trigger_ref_with_caller<'a, E: Event>(
+        &mut self,
+        event: &mut E,
+        trigger: &mut E::Trigger<'a>,
+        caller: MaybeLocation,
+    ) {
+        let event_key = self.register_event_key::<E>();
+
+        todo!()
+    }
+
+    /// Emties queued entities and adds them to the empty [`Archetype`]
+    /// This should be called before doing operations that might operate on queued entities
+    #[track_caller]
+    pub(crate) fn flush_entities(&mut self) {
+        let by = MaybeLocation::caller();
+        let at = self.change_tick();
+        // let empty_archetype = self.archetypes.empty_mut();
+        unsafe {
+            self.entities.flush(|entity, location| todo!(), by, at);
+        }
+    }
+
+    /// Applies any commands in the world's internal [`CommandQueue`]
+    /// This does not apply commands from any system, only those stored in the world
+    pub(crate) fn flush_commands(&mut self) {
+        if !unsafe { self.command_queue.is_empty() } {
+            todo!()
+        }
+    }
+
+    /// Applies any queued component registration
+    pub(crate) fn flush_components(&mut self) {
+        self.components_registrator().apply_queued_registrations();
+    }
+
+    /// Flushes queued entities and commands
+    /// Queued entities will be spawned, and then commands will be applied
+    #[inline]
+    #[track_caller]
+    pub fn flush(&mut self) {
+        self.flush_entities();
+        self.flush_components();
+        self.flush_commands();
+    }
+
+    /// Clears the internal component tracker state
+    ///
+    /// The world maintains some internal state about changed and removed components.
+    /// By clearing this internal state, the world "forgets" about those changes, allowing a new round
+    /// of detection to be recorded
+    pub fn clear_trackers(&mut self) {
+        self.removed_components.update();
+        self.last_change_tick = self.increment_change_tick();
+    }
+
+    /// Increments the world's current change tick and returns the old value
+    #[inline]
+    pub fn increment_change_tick(&mut self) -> Tick {
+        let change_tick = self.change_tick.get_mut();
+        let prev_tick = *change_tick;
+        *change_tick = change_tick.wrapping_add(1);
+        Tick::new(prev_tick)
+    }
+
     /// Reads the current change tick of this world
     #[inline]
     pub fn read_change_tick(&self) -> Tick {
@@ -419,7 +612,73 @@ impl World {
             return None;
         }
 
-        todo!()
+        let check = CheckChangeTicks(change_tick);
+
+        let Storages {
+            // ret mut tables,
+            // ref mut sparse_sets,
+            ref mut resources,
+            // ref mut non_send_resources,
+        } = self.storages;
+
+        #[cfg(feature = "trace")]
+        let _span = tracing::info_span!("check component ticks").entered();
+
+        resources.check_change_ticks(check);
+        self.entities.check_change_ticks(check);
+
+        if let Some(mut schedules) = self.get_resource_mut::<Schedules>() {
+            schedules.check_change_ticks(check);
+        }
+
+        self.trigger(check);
+        self.flush();
+
+        self.last_check_tick = change_tick;
+
+        Some(check)
+    }
+
+    /// Sets [`World::last_change_tick()`] to the specified value during a scope.
+    /// When the scope terminates, it will return to its old value
+    ///
+    /// This is useful if you need a region of code to be able to react to earlier changes made inthe same system
+    ///
+    pub fn last_change_tick_scope<T>(
+        &mut self,
+        last_change_tick: Tick,
+        f: impl FnOnce(&mut World) -> T,
+    ) -> T {
+        struct LastTickGuard<'a> {
+            world: &'a mut World,
+            last_tick: Tick,
+        }
+
+        // By setting the change tick in the drop impl, we ensure that
+        // the change tick gets reset even if a panic occurs during the scope
+        impl Drop for LastTickGuard<'_> {
+            fn drop(&mut self) {
+                self.world.last_change_tick = self.last_tick;
+            }
+        }
+
+        let guard = LastTickGuard {
+            last_tick: self.last_change_tick,
+            world: self,
+        };
+
+        guard.world.last_change_tick = last_change_tick;
+
+        f(guard.world)
+    }
+
+    /// Convenience method for accessing the world's default error handler
+    #[inline]
+    pub fn default_error_handler(&self) -> ErrorHandler {
+        self.get_resource::<DefaultErrorHandler>()
+            .copied()
+            .unwrap_or_default()
+            .0
     }
 }
 
@@ -429,7 +688,7 @@ impl World {
 /// This can be helpful for complex initialization or contgext-aware defaults
 ///
 /// [`FromWorld`] is automatically implemented for any type implementing [`Default`]
-/// and may also be derive for
+/// and may also be derived for
 /// - any struct whose fields all implement `FromWorld`
 /// - any enum where one variant has the attribute `#[from_world]`
 ///

@@ -1,11 +1,12 @@
-mod component;
-
 extern crate proc_macro;
+mod component;
+mod event;
+mod message;
 
-use feap_macro_utils::{FeapManifest, derive_label};
+use feap_macro_utils::{derive_label, FeapManifest};
 use proc_macro::TokenStream;
 use quote::format_ident;
-use syn::{DeriveInput, parse_macro_input};
+use syn::{parse_macro_input, DeriveInput};
 
 pub(crate) fn feap_ecs_path() -> syn::Path {
     FeapManifest::shared(|manifest| manifest.get_path("feap_ecs"))
@@ -37,8 +38,28 @@ pub fn derive_system_set(input: TokenStream) -> TokenStream {
     derive_label(input, "SystemSet", &trait_path)
 }
 
+#[proc_macro_derive(
+    Component,
+    attributes(component, require, relationship, relationship_target, entities)
+)]
+pub fn derive_component(input: TokenStream) -> TokenStream {
+    component::derive_component(input)
+}
+
 /// Implement the `Resource` trait.
 #[proc_macro_derive(Resource)]
 pub fn derive_resource(input: TokenStream) -> TokenStream {
     component::derive_resource(input)
+}
+
+/// Implement the `Event` trait.
+#[proc_macro_derive(Event, attributes(event))]
+pub fn derive_event(input: TokenStream) -> TokenStream {
+    event::derive_event(input)
+}
+
+/// Implement the `Message` trait
+#[proc_macro_derive(Message)]
+pub fn derive_message(input: TokenStream) -> TokenStream {
+    message::derive_message(input)
 }

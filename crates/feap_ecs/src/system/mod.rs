@@ -5,7 +5,9 @@ mod input;
 mod schedule_system;
 mod system;
 mod system_param;
+mod error;
 
+pub use error::RunSystemError;
 pub use input::SystemInput;
 pub use schedule_system::ScheduleSystem;
 pub use system::{SystemStateFlags, BoxedSystem, ReadOnlySystem, System};

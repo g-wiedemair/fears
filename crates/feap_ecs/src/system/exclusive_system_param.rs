@@ -1,4 +1,7 @@
+use crate::system::Local;
+use crate::world::FromWorld;
 use crate::{system::fucntion_system::SystemMeta, world::World};
+use feap_core::cell::SyncCell;
 use variadics_please::all_tuples;
 
 /// A parameter that can be used in an exclusive system (a system with an `&mut World` parameter
@@ -15,6 +18,22 @@ pub trait ExclusiveSystemParam: Sized {
 
     /// Creates a new instance of this param's [`State`]
     fn init(world: &mut World, system_meta: &mut SystemMeta) -> Self::State;
+
+    /// Creates a parameter to be passed into an [`ExclusiveSystemParamFunction`]
+    fn get_param<'s>(state: &'s mut Self::State, system_meta: &SystemMeta) -> Self::Item<'s>;
+}
+
+impl<'_s, T: FromWorld + Send + 'static> ExclusiveSystemParam for Local<'_s, T> {
+    type State = SyncCell<T>;
+    type Item<'s> = Local<'s, T>;
+
+    fn init(world: &mut World, system_meta: &mut SystemMeta) -> Self::State {
+        SyncCell::new(T::from_world(world))
+    }
+
+    fn get_param<'s>(state: &'s mut Self::State, _system_meta: &SystemMeta) -> Self::Item<'s> {
+        Local(state.get())
+    }
 }
 
 /// Shorthand way of accessing the associated type [`ExclusiveSystemParam::Item`]
@@ -39,10 +58,23 @@ macro_rules! impl_exclusive_system_param_tuple {
         impl<$($param: ExclusiveSystemParam),*> ExclusiveSystemParam for ($($param,)*) {
             type State = ($($param::State,)*);
             type Item<'s> = ($($param::Item<'s>,)*);
-            
+
             #[inline]
             fn init(world: &mut World, system_meta: &mut SystemMeta) -> Self::State {
                 (($($param::init(world, system_meta),)*))
+            }
+
+            #[inline]
+            fn get_param<'s>(
+                state: &'s mut Self::State,
+                system_meta: &SystemMeta,
+            ) -> Self::Item<'s> {
+                let ($($param,)*) = state;
+                #[allow(
+                    clippy::unused_unit,
+                    reason = "Zero-length tuples won't have any params to get."
+                )]
+                ($($param::get_param($param, system_meta),)*)
             }
         }
     };

@@ -8,6 +8,7 @@ rust-version.workspace = true
 default = []
 
 trace = []
+backtrace = ["std"]
 serialize = []
 
 std = []
@@ -23,8 +24,10 @@ feap_core = { path = "../feap_core" }
 feap_utils = { path = "../feap_utils" }
 feap_ecs_macros = { path = "macros" }
 
+tracing.workspace = true
 thiserror.workspace = true
 log.workspace = true
+derive_more.workspace = true
 bitflags.workspace = true
 fixedbitset.workspace = true
 smallvec.workspace = true

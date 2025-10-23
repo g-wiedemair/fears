@@ -1,11 +1,14 @@
-use crate::{App, Plugin, plugin::PluginsState};
+use crate::{plugin::PluginsState, App, Plugin};
 use feap_core::collections::{HashMap, HashSet};
 use feap_ecs::{
     intern::Interned,
-    schedule::{InternedScheduleLabel, InternedSystemSet, IntoScheduleConfigs, Schedule, ScheduleLabel, Schedules},
-    system::ScheduleSystem,
-    world::{World, FromWorld},
     resource::Resource,
+    schedule::{
+        InternedScheduleLabel, InternedSystemSet, IntoScheduleConfigs, Schedule, ScheduleLabel,
+        Schedules,
+    },
+    system::ScheduleSystem,
+    world::{FromWorld, World},
 };
 use tracing::info_span;
 
@@ -184,8 +187,7 @@ impl SubApps {
             todo!()
         }
 
-        todo!()
-        // self.main.world.clear_trackers();
+        self.main.world.clear_trackers();
     }
 
     /// Returns an iterator over the sub-apps (starting with the main one)

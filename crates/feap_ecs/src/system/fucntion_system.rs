@@ -1,9 +1,13 @@
-use super::{IntoSystem, SystemStateFlags, System, SystemInput, SystemParam, SystemParamItem};
+use super::{
+    IntoSystem, RunSystemError, System, SystemInput, SystemParam, SystemParamItem, SystemStateFlags,
+};
 use crate::{
     component::Tick,
+    error::FeapError,
     query::FilteredAccessSet,
     schedule::{InternedSystemSet, SystemSet, SystemTypeSet},
-    world::{World, WorldId},
+    system::{input::SystemIn, system_param::SystemParamValidationError},
+    world::{UnsafeWorldCell, World, WorldId},
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
@@ -72,6 +76,11 @@ where
     type Out = Out;
 
     #[inline]
+    fn name(&self) -> DebugName {
+        todo!()
+    }
+
+    #[inline]
     fn initialize(&mut self, world: &mut World) -> FilteredAccessSet {
         if let Some(state) = &self.state {
             assert_eq!(
@@ -98,6 +107,25 @@ where
     fn default_system_sets(&self) -> Vec<InternedSystemSet> {
         let set = SystemTypeSet::<Self>::new();
         vec![set.intern()]
+    }
+
+    unsafe fn run_unsafe(
+        &mut self,
+        input: SystemIn<'_, Self>,
+        world: UnsafeWorldCell,
+    ) -> Result<Self::Out, RunSystemError> {
+        todo!()
+    }
+
+    fn apply_deferred(&mut self, _world: &mut World) {
+        todo!()
+    }
+
+    unsafe fn validate_param_unsafe(
+        &mut self,
+        world: UnsafeWorldCell,
+    ) -> Result<(), SystemParamValidationError> {
+        todo!()
     }
 }
 
@@ -197,6 +225,24 @@ all_tuples!(impl_system_function, 0, 16, F);
 
 /// A type that may be converted to the output of a [`System`]
 /// This is used to allow systems to return either a plain value or a [`Result`]
-pub trait IntoResult<Out>: Sized {}
+pub trait IntoResult<Out>: Sized {
+    fn into_result(self) -> Result<Out, RunSystemError>;
+}
 
-impl<T> IntoResult<T> for T {}
+impl<T> IntoResult<T> for T {
+    fn into_result(self) -> Result<T, RunSystemError> {
+        Ok(self)
+    }
+}
+
+impl<T> IntoResult<T> for Result<T, RunSystemError> {
+    fn into_result(self) -> Result<T, RunSystemError> {
+        self
+    }
+}
+
+impl<T> IntoResult<T> for Result<T, FeapError> {
+    fn into_result(self) -> Result<T, RunSystemError> {
+        Ok(self?)
+    }
+}

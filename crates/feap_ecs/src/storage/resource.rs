@@ -1,11 +1,11 @@
 use crate::{
     change_detection::{MaybeLocation, MutUntyped, TicksMut},
-    component::{ComponentId, Components, Tick, TickCells},
+    component::{CheckChangeTicks, ComponentId, ComponentTicks, Components, Tick, TickCells},
     storage::{blob_array::BlobArray, sparse_set::SparseSet},
 };
+use core::{cell::UnsafeCell, panic::Location};
 use feap_core::ptr::{OwningPtr, Ptr, UnsafeCellDeref};
 use feap_utils::debug_info::DebugName;
-use core::{cell::UnsafeCell, panic::Location};
 #[cfg(feature = "std")]
 use std::thread::ThreadId;
 
@@ -17,7 +17,7 @@ pub struct ResourceData<const SEND: bool> {
     added_ticks: UnsafeCell<Tick>,
     changed_ticks: UnsafeCell<Tick>,
     #[cfg_attr(
-        not(feature = "std"), 
+        not(feature = "std"),
         expect(dead_code, reason = "currently only used with the std feature")
     )]
     type_name: DebugName,
@@ -37,10 +37,10 @@ impl<const SEND: bool> ResourceData<SEND> {
             #[cfg(feature = "std")]
             if self.origin_thread_id != Some(std::thread::current().id()) {
                 panic!(
-                "Attempted to access or drop non-send resource {} from thread {:?} on a thread {:?}. This is not allowed. Aborting.",
-                self.type_name,
-                self.origin_thread_id,
-                std::thread::current().id()
+                    "Attempted to access or drop non-send resource {} from thread {:?} on a thread {:?}. This is not allowed. Aborting.",
+                    self.type_name,
+                    self.origin_thread_id,
+                    std::thread::current().id()
                 );
             }
         }
@@ -69,29 +69,61 @@ impl<const SEND: bool> ResourceData<SEND> {
                 self.origin_thread_id = Some(std::thread::current().id());
             }
 
-            unsafe { self.data.initialize_unchecked(Self::ROW, value)};
+            unsafe { self.data.initialize_unchecked(Self::ROW, value) };
             *self.added_ticks.deref_mut() = change_tick;
             self.is_present = true;
         }
         *self.changed_ticks.deref_mut() = change_tick;
 
-        self.changed_by.as_ref().map(|changed_by| changed_by.deref_mut()).assign(caller);
+        self.changed_by
+            .as_ref()
+            .map(|changed_by| changed_by.deref_mut())
+            .assign(caller);
     }
-    
+
+    /// Inserts a value into the resource with a pre-existing change tick.
+    /// If a value is already present it will be replaced
+    #[inline]
+    pub(crate) unsafe fn insert_with_ticks(
+        &mut self,
+        value: OwningPtr<'_>,
+        change_ticks: ComponentTicks,
+        caller: MaybeLocation,
+    ) {
+        if self.is_present() {
+            self.validate_access();
+            unsafe { self.data.replace_unchecked(Self::ROW, value) };
+        } else {
+            #[cfg(feature = "std")]
+            if !SEND {
+                self.origin_thread_id = Some(std::thread::current().id());
+            }
+            unsafe { self.data.initialize_unchecked(Self::ROW, value) };
+            self.is_present = true;
+        }
+
+        *self.added_ticks.deref_mut() = change_ticks.added;
+        *self.changed_ticks.deref_mut() = change_ticks.changed;
+        self.changed_by
+            .as_ref()
+            .map(|changed_by| changed_by.deref_mut())
+            .assign(caller);
+    }
+
     /// Returns a mutable reference to the resource, it if exists
     pub(crate) fn get_mut(&mut self, last_run: Tick, this_run: Tick) -> Option<MutUntyped<'_>> {
         let (ptr, ticks, caller) = self.get_with_ticks()?;
         Some(MutUntyped {
-          value: unsafe { ptr.assert_unique() },
-            ticks: unsafe { TicksMut::from_tick_cells(ticks, last_run, this_run)},
-            changed_by: unsafe { caller.map(|caller| caller.deref_mut())}
+            value: unsafe { ptr.assert_unique() },
+            ticks: unsafe { TicksMut::from_tick_cells(ticks, last_run, this_run) },
+            changed_by: unsafe { caller.map(|caller| caller.deref_mut()) },
         })
     }
 
     /// Returns references to the resource and its change ticks, if it exists
     #[inline]
     pub(crate) fn get_with_ticks(
-        &self
+        &self,
     ) -> Option<(
         Ptr<'_>,
         TickCells<'_>,
@@ -100,7 +132,7 @@ impl<const SEND: bool> ResourceData<SEND> {
         self.is_present().then(|| {
             self.validate_access();
             (
-                unsafe { self.data.get_unchecked(Self::ROW)},
+                unsafe { self.data.get_unchecked(Self::ROW) },
                 TickCells {
                     added: &self.added_ticks,
                     changed: &self.changed_ticks,
@@ -108,6 +140,43 @@ impl<const SEND: bool> ResourceData<SEND> {
                 self.changed_by.as_ref(),
             )
         })
+    }
+
+    /// Removes a value from the resource, if present
+    #[inline]
+    #[must_use = "The returned pointer to the removed component should be used or dropped"]
+    pub(crate) fn remove(&mut self) -> Option<(OwningPtr<'_>, ComponentTicks, MaybeLocation)> {
+        if !self.is_present() {
+            return None;
+        }
+        if !SEND {
+            self.validate_access();
+        }
+
+        self.is_present = false;
+
+        let res = unsafe { self.data.get_unchecked_mut(Self::ROW).promote() };
+
+        let caller = self
+            .changed_by
+            .as_ref()
+            .map(|changed_by| unsafe { *changed_by.deref_mut() });
+
+        unsafe {
+            Some((
+                res,
+                ComponentTicks {
+                    added: self.added_ticks.read(),
+                    changed: self.changed_ticks.read(),
+                },
+                caller,
+            ))
+        }
+    }
+
+    pub(crate) fn check_change_ticks(&mut self, check: CheckChangeTicks) {
+        self.added_ticks.get_mut().check_tick(check);
+        self.changed_ticks.get_mut().check_tick(check);
     }
 }
 
@@ -137,19 +206,20 @@ impl<const SEND: bool> Resources<SEND> {
                 BlobArray::with_capacity(
                     component_info.layout(),
                     component_info.drop(),
-                    1
+                    1,
                 )
             };
-            
-            ResourceData { 
-                data, 
+
+            ResourceData {
+                data,
                 is_present: false,
                 added_ticks: UnsafeCell::new(Tick::new(0)),
                 changed_ticks: UnsafeCell::new(Tick::new(0)),
                 type_name: component_info.name(),
-                #[cfg(feature = "std")] 
+                #[cfg(feature = "std")]
                 origin_thread_id: None,
-                changed_by: MaybeLocation::caller().map(UnsafeCell::new) }
+                changed_by: MaybeLocation::caller().map(UnsafeCell::new),
+            }
         })
     }
 
@@ -163,5 +233,11 @@ impl<const SEND: bool> Resources<SEND> {
     #[inline]
     pub(crate) fn get_mut(&mut self, component_id: ComponentId) -> Option<&mut ResourceData<SEND>> {
         self.resources.get_mut(component_id)
+    }
+
+    pub(crate) fn check_change_ticks(&mut self, check: CheckChangeTicks) {
+        for info in self.resources.values_mut() {
+            info.check_change_ticks(check);
+        }
     }
 }

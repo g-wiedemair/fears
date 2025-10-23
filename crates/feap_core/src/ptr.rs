@@ -107,6 +107,13 @@ impl<'a, A: IsAligned> Ptr<'a, A> {
         PtrMut(self.0, PhantomData)
     }
 
+    /// Transforms this [`Ptr<T>`] into a `&T` with the same lifetime
+    #[inline]
+    pub unsafe fn deref<T>(self) -> &'a T {
+        let ptr = self.as_ptr().cast::<T>().debug_ensure_aligned();
+        unsafe { &*ptr }
+    }
+
     /// Gets the underlying pointer, erasing the associated lifetime
     #[inline]
     pub fn as_ptr(&self) -> *mut u8 {
@@ -156,15 +163,32 @@ impl<'a, A: IsAligned> PtrMut<'a, A> {
 // OwningMut
 
 impl<'a> OwningPtr<'a> {
+    /// Creates a new instance from a raw pointer
+    #[inline]
+    pub unsafe fn new(inner: NonNull<u8>) -> Self {
+        Self(inner, PhantomData)
+    }
+
     /// Consumes a value and creates an [`OwningPtr`] to it while ensuring a double drop does not happen
     #[inline]
     pub fn make<T, F: FnOnce(OwningPtr<'_>) -> R, R>(val: T, f: F) -> R {
         let mut val = ManuallyDrop::new(val);
         f(unsafe { Self::make_internal(&mut val) })
     }
+
+    unsafe fn make_internal<T>(temp: &mut ManuallyDrop<T>) -> OwningPtr<'_> {
+        unsafe { PtrMut::from(&mut *temp).promote() }
+    }
 }
 
 impl<'a, A: IsAligned> OwningPtr<'a, A> {
+    /// Consumes the [`OwningPtr`] to obtain ownership of the underlying data of type `T`
+    #[inline]
+    pub unsafe fn read<T>(self) -> T {
+        let ptr = self.as_ptr().cast::<T>().debug_ensure_aligned();
+        unsafe { ptr.read() }
+    }
+
     /// Consumes the [`OwningPtr`] to drop the underlying data of type `T`
     #[inline]
     pub unsafe fn drop_as<T>(self) {
@@ -172,10 +196,6 @@ impl<'a, A: IsAligned> OwningPtr<'a, A> {
         unsafe {
             ptr.drop_in_place();
         }
-    }
-
-    unsafe fn make_internal<T>(temp: &mut ManuallyDrop<T>) -> OwningPtr<'_> {
-        unsafe { PtrMut::from(&mut *temp).promote() }
     }
 
     /// Gets the underlying pointer, erasing the associated lifetime
@@ -233,6 +253,9 @@ mod private {
 pub trait UnsafeCellDeref<'a, T>: private::SealedUnsafeCell {
     unsafe fn deref(self) -> &'a T;
     unsafe fn deref_mut(self) -> &'a mut T;
+    unsafe fn read(self) -> T
+    where
+        T: Copy;
 }
 
 impl<'a, T> UnsafeCellDeref<'a, T> for &'a UnsafeCell<T> {
@@ -245,5 +268,13 @@ impl<'a, T> UnsafeCellDeref<'a, T> for &'a UnsafeCell<T> {
     unsafe fn deref_mut(self) -> &'a mut T {
         // SAFETY: The caller upholds the alias rules.
         unsafe { &mut *self.get() }
+    }
+
+    #[inline]
+    unsafe fn read(self) -> T
+    where
+        T: Copy,
+    {
+        unsafe { self.get().read() }
     }
 }

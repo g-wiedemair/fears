@@ -60,6 +60,22 @@ impl NodeId {
     pub const fn is_system(&self) -> bool {
         matches!(self, NodeId::System(_))
     }
+
+    /// Returns the system key if the node is a system, otherwise `None`
+    pub const fn as_system(&self) -> Option<SystemKey> {
+        match self {
+            NodeId::System(system) => Some(*system),
+            NodeId::Set(_) => None,
+        }
+    }
+
+    /// Returns the system set key if the node is a system set, otherwise `None`
+    pub const fn as_set(&self) -> Option<SystemSetKey> {
+        match self {
+            NodeId::System(_) => None,
+            NodeId::Set(set) => Some(*set),
+        }
+    }
 }
 
 impl GraphNodeId for NodeId {
@@ -290,6 +306,16 @@ impl Systems {
     pub fn is_initialized(&self) -> bool {
         self.uninit.is_empty()
     }
+    
+    /// Returns a mutable reference to the system with the given key.
+    pub(crate) fn node_mut(&mut self, key: SystemKey) -> Option<&mut SystemNode> {
+        self.nodes.get_mut(key)
+    }
+    
+    /// Returns a mutable reference to the conditions for the system with the given key
+    pub fn get_conditions_mut(&mut self, key: SystemKey) -> Option<&mut Vec<ConditionWithAccess>> {
+        self.conditions.get_mut(key)
+    }
 }
 
 /// Container for system sets in a schedule
@@ -342,6 +368,13 @@ impl SystemSets {
             self.conditions.insert(key, Vec::new());
             key
         })
+    }
+    
+    /// Returns `true` if the system set with the given key has conditions
+    pub fn has_conditions(&self, key: SystemSetKey) -> bool {
+        self.conditions
+            .get(key)
+            .is_some_and(|conditions| !conditions.is_empty())
     }
 
     /// Initializes all system sets conditions that have not been initialized yet.

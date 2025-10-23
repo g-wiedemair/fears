@@ -1,10 +1,12 @@
 use super::{
-    ExecutorKind, InternedScheduleLabel, InternedSystemSet, IntoScheduleConfigs,
-    MultiThreadedExecutor, ScheduleGraph, ScheduleLabel, SingleThreadedExecutor, SystemExecutor,
-    error::{ScheduleBuildError, ScheduleBuildWarning}, executor::SystemSchedule,
+    error::{ScheduleBuildError, ScheduleBuildWarning}, executor::SystemSchedule, ExecutorKind, InternedScheduleLabel,
+    InternedSystemSet, IntoScheduleConfigs, MultiThreadedExecutor, ScheduleGraph, ScheduleLabel,
+    SingleThreadedExecutor,
+    SystemExecutor,
 };
+use crate::component::CheckChangeTicks;
 use crate::{component::ComponentId, resource::Resource, system::ScheduleSystem, world::World};
-use alloc::{boxed::Box, vec::Vec, collections::BTreeSet};
+use alloc::{boxed::Box, collections::BTreeSet, vec::Vec};
 use core::any::Any;
 use feap_core::collections::HashMap;
 use feap_utils::map::TypeIdMap;
@@ -22,7 +24,7 @@ pub struct Schedule {
     executable: SystemSchedule,
     executor: Box<dyn SystemExecutor>,
     executor_initialized: bool,
-    warnings: Vec<ScheduleBuildWarning>
+    warnings: Vec<ScheduleBuildWarning>,
 }
 
 impl Schedule {
@@ -85,6 +87,13 @@ impl Schedule {
             )
         });
 
+        let error_handler = world.default_error_handler();
+
+        #[cfg(not(feature = "feap_debug_stepping"))]
+        self.executor
+            .run(&mut self.executable, world, None, error_handler);
+
+        #[cfg(feature = "feap_debug_stepping")]
         todo!()
     }
 
@@ -104,10 +113,32 @@ impl Schedule {
                 &ignored_ambiguities,
                 self.label,
             )?;
+            self.graph.changed = false;
+            self.executor_initialized = false;
+        }
+
+        if !self.executor_initialized {
+            self.executor.init(&self.executable);
+            self.executor_initialized = true;
+        }
+
+        Ok(())
+    }
+
+    /// Iterates the change ticks of all systems in the schedule and clamps any older than
+    /// [`MAX_CHANGE_AGE`]
+    pub fn check_change_ticks(&mut self, check: CheckChangeTicks) {
+        for system in &mut self.executable.systems {
             todo!()
         }
 
-        todo!()
+        for conditions in &mut self.executable.system_conditions {
+            todo!()
+        }
+
+        for conditions in &mut self.executable.set_conditions {
+            todo!()
+        }
     }
 }
 
@@ -164,6 +195,27 @@ impl Schedules {
     ) -> &mut Self {
         self.entry(schedule).configure_sets(sets);
         self
+    }
+
+    /// Iterates the change ticks of all systems in all stored schedules and clamps any older than
+    /// [`MAX_CHANGE_AGE`]
+    pub(crate) fn check_change_ticks(&mut self, check: CheckChangeTicks) {
+        #[cfg(feature = "trace")]
+        let _all_span = info_span!("check stored schedule ticks").entered();
+        #[cfg_attr(
+            not(feature = "trace"),
+            expect(
+                unused_variables,
+                reason = "The `label` variable goes unused if the `trace` feature isn't active"
+            )
+        )]
+        for (label, schedule) in &mut self.inner {
+            #[cfg(feature = "trace")]
+            let name = format!("{label:?}");
+            #[cfg(feature = "trace")]
+            let _one_span = info_span!("check schedule ticks", name = &name).entered();
+            schedule.check_change_ticks(check);
+        }
     }
 }
 

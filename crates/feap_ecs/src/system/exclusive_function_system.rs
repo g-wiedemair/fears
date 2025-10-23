@@ -1,16 +1,21 @@
+use crate::system::input::SystemIn;
+use crate::system::system_param::SystemParamValidationError;
+use crate::system::RunSystemError;
+use crate::world::UnsafeWorldCell;
 use crate::{
     component::Tick,
     query::FilteredAccessSet,
     schedule::{InternedSystemSet, SystemSet, SystemTypeSet},
     system::{
-        IntoSystem, System, SystemInput,
-        exclusive_system_param::{ExclusiveSystemParam, ExclusiveSystemParamItem},
-        fucntion_system::{IntoResult, SystemMeta},
+        exclusive_system_param::{ExclusiveSystemParam, ExclusiveSystemParamItem}, fucntion_system::{IntoResult, SystemMeta}, IntoSystem,
+        System,
+        SystemInput,
     },
     world::World,
 };
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
+use feap_utils::debug_info::DebugName;
 use variadics_please::all_tuples;
 
 /// A function system that runs with exclusive [`World`] access
@@ -50,6 +55,8 @@ where
     }
 }
 
+const PARAM_MESSAGE: &str = "System's param_state was not found. Did you forget to initialize this system before running it?";
+
 impl<Marker, Out, F> System for ExclusiveFunctionSystem<Marker, Out, F>
 where
     Marker: 'static,
@@ -61,6 +68,11 @@ where
     type Out = Out;
 
     #[inline]
+    fn name(&self) -> DebugName {
+        self.system_meta.name.clone()
+    }
+
+    #[inline]
     fn initialize(&mut self, world: &mut World) -> FilteredAccessSet {
         self.system_meta.last_run = world.change_tick().relative_to(Tick::MAX);
         self.param_state = Some(F::Param::init(world, &mut self.system_meta));
@@ -70,6 +82,42 @@ where
     fn default_system_sets(&self) -> Vec<InternedSystemSet> {
         let set = SystemTypeSet::<Self>::new();
         vec![set.intern()]
+    }
+
+    unsafe fn run_unsafe(
+        &mut self,
+        input: SystemIn<'_, Self>,
+        world: UnsafeWorldCell,
+    ) -> Result<Self::Out, RunSystemError> {
+        let world = unsafe { world.world_mut() };
+        world.last_change_tick_scope(self.system_meta.last_run, |world| {
+            #[cfg(feature = "trace")]
+            let _span_guard = self.system_meta.system_span.enter();
+
+            let params = F::Param::get_param(
+                self.param_state.as_mut().expect(PARAM_MESSAGE),
+                &self.system_meta,
+            );
+
+            let out = self.func.run(world, input, params);
+
+            world.flush();
+            self.system_meta.last_run = world.increment_change_tick();
+
+            IntoResult::into_result(out)
+        })
+    }
+
+    fn apply_deferred(&mut self, _world: &mut World) {
+        // exclusive systems do not have any buffers to apply
+    }
+
+    unsafe fn validate_param_unsafe(
+        &mut self,
+        _world: UnsafeWorldCell,
+    ) -> Result<(), SystemParamValidationError> {
+        // All exclusive system params are always available
+        Ok(())
     }
 }
 
@@ -87,6 +135,14 @@ pub trait ExclusiveSystemParamFunction<Marker>: Send + Sync + 'static {
     type Out;
     /// The [ÈxclusiveSystemParam`]s defined by this system's `fn` parameters
     type Param: ExclusiveSystemParam;
+
+    /// Executes this system once
+    fn run(
+        &mut self,
+        world: &mut World,
+        input: <Self::In as SystemInput>::Inner<'_>,
+        param_value: ExclusiveSystemParamItem<Self::Param>,
+    ) -> Self::Out;
 }
 
 /// A marker type used to distinguish exclusive function systems with and without input.
@@ -95,7 +151,7 @@ pub struct HasExclusiveSystemInput;
 
 macro_rules! impl_exclusive_system_function {
     ($($param: ident),*) => {
-                  #[expect(
+        #[expect(
             clippy::allow_attributes,
             reason = "This is within a macro, and as such, the below lints may not always apply."
         )]
@@ -106,16 +162,29 @@ macro_rules! impl_exclusive_system_function {
         impl<Out, Func, $($param: ExclusiveSystemParam),*> ExclusiveSystemParamFunction<fn($($param,)*) -> Out> for Func
         where
             Func: Send + Sync + 'static,
-        for <'a> &'a mut Func:
-            FnMut(&mut World, $($param),*) -> Out +
-            FnMut(&mut World, $(ExclusiveSystemParamItem<$param>),*) -> Out,
-        Out: 'static, {
-                      type In = ();
-                      type Out = Out;
-                      type Param = ($($param,)*);
-                  }
+            for <'a> &'a mut Func:
+                FnMut(&mut World, $($param),*) -> Out +
+                FnMut(&mut World, $(ExclusiveSystemParamItem<$param>),*) -> Out,
+            Out: 'static, {
+            type In = ();
+            type Out = Out;
+            type Param = ($($param,)*);
 
-                #[expect(
+            #[inline]
+            fn run(&mut self, world: &mut World, _in: (), param_value: ExclusiveSystemParamItem< ($($param,)*)>) -> Out {
+                fn call_inner<Out, $($param,)*>(
+                    mut f: impl FnMut(&mut World, $($param,)*) -> Out,
+                    world: &mut World,
+                    $($param: $param,)*
+                ) -> Out {
+                    f(world, $($param,)*)
+                }
+                let ($($param,)*) = param_value;
+                call_inner(self, world, $($param),*)
+            }
+        }
+
+        #[expect(
             clippy::allow_attributes,
             reason = "This is within a macro, and as such, the below lints may not always apply."
         )]
@@ -135,8 +204,12 @@ macro_rules! impl_exclusive_system_function {
             type In = In;
             type Out = Out;
             type Param = ($($param,)*);
-        }
 
+            #[inline]
+            fn run(&mut self, world: &mut World, input: In::Inner<'_>, param_value: ExclusiveSystemParamItem< ($($param,)*)>) -> Out {
+                todo!()
+            }
+        }
     };
 }
 

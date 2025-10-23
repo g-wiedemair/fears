@@ -20,6 +20,7 @@ use alloc::{
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
     string::String,
+    vec,
     vec::Vec,
 };
 use core::any::TypeId;
@@ -368,7 +369,92 @@ impl ScheduleGraph {
         dependency_flattened_dag: Dag<SystemKey>,
         hier_results_reachable: FixedBitSet,
     ) -> SystemSchedule {
-        todo!()
+        let dg_system_ids = dependency_flattened_dag.topsort;
+        let dg_system_idx_map = dg_system_ids
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(i, id)| (id, i))
+            .collect::<HashMap<_, _>>();
+
+        let hg_systems = self
+            .hierarchy
+            .topsort
+            .iter()
+            .cloned()
+            .enumerate()
+            .filter_map(|(i, id)| Some((i, id.as_system()?)))
+            .collect::<Vec<_>>();
+
+        let (hg_set_with_conditions_idxs, hg_set_ids): (Vec<_>, Vec<_>) = self
+            .hierarchy
+            .topsort
+            .iter()
+            .cloned()
+            .enumerate()
+            .filter_map(|(i, id)| {
+                // Ignore system sets that have no conditions
+                let key = id.as_set()?;
+                self.system_sets.has_conditions(key).then_some((i, key))
+            })
+            .unzip();
+
+        let sys_count = self.systems.len();
+        let set_with_conditions_count = hg_set_ids.len();
+        let hg_node_count = self.hierarchy.graph.node_count();
+
+        // Get the number of dependencies and the immediate dependents of each system
+        // (needed by multi_threaded executor to run systems in the correct order)
+        let mut system_dependencies = Vec::with_capacity(sys_count);
+        let mut system_dependents = Vec::with_capacity(sys_count);
+        for &sys_key in &dg_system_ids {
+            let num_dependencies = dependency_flattened_dag
+                .graph
+                .neighbors_directed(sys_key, Direction::Incoming)
+                .count();
+            let dependents = dependency_flattened_dag
+                .graph
+                .neighbors_directed(sys_key, Direction::Outgoing)
+                .map(|dep_id| dg_system_idx_map[&dep_id])
+                .collect::<Vec<_>>();
+
+            system_dependencies.push(num_dependencies);
+            system_dependents.push(dependents);
+        }
+
+        // Get the rows and columns of the hierarchy graph's reachability matrix
+        // (needed to we can evaluate conditions in the correct order)
+        let mut systems_in_sets_with_conditions =
+            vec![FixedBitSet::with_capacity(sys_count); set_with_conditions_count];
+        for (i, &row) in hg_set_with_conditions_idxs.iter().enumerate() {
+            todo!()
+        }
+
+        let mut sets_with_conditions_of_systems =
+            vec![FixedBitSet::with_capacity(set_with_conditions_count); sys_count];
+        for &(col, sys_key) in &hg_systems {
+            let i = dg_system_idx_map[&sys_key];
+            let bitset = &mut sets_with_conditions_of_systems[i];
+            for (idx, &row) in hg_set_with_conditions_idxs
+                .iter()
+                .enumerate()
+                .take_while(|&(_idx, &row)| row < col)
+            {
+                todo!()
+            }
+        }
+
+        SystemSchedule {
+            systems: Vec::with_capacity(sys_count),
+            system_conditions: Vec::with_capacity(sys_count),
+            set_conditions: Vec::with_capacity(set_with_conditions_count),
+            system_ids: dg_system_ids,
+            set_ids: hg_set_ids,
+            // system_dependencies,
+            // system_dependents,
+            sets_with_conditions_of_systems,
+            // systems_in_sets_with_conditions,
+        }
     }
 
     /// Return a map from system set `NodeId` to a list of system `NodeId`s that are included in the set
@@ -526,7 +612,19 @@ impl ScheduleGraph {
             );
         }
 
-        todo!()
+        // Move systems into new schedule
+        for &key in &schedule.system_ids {
+            let system = self.systems.node_mut(key).unwrap().inner.take().unwrap();
+            let conditions = core::mem::take(self.systems.get_conditions_mut(key).unwrap());
+            schedule.systems.push(system);
+            schedule.system_conditions.push(conditions);
+        }
+
+        for &key in &schedule.set_ids {
+            todo!()
+        }
+
+        Ok(warnings)
     }
 
     /// Tries to topologically sort `graph`

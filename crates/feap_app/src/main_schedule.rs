@@ -1,7 +1,9 @@
 use crate::Plugin;
 use feap_ecs::{
+    change_detection::Mut,
     resource::Resource,
     schedule::{ExecutorKind, InternedScheduleLabel, Schedule, ScheduleLabel, SystemSet},
+    system::Local,
     world::World,
 };
 
@@ -32,8 +34,21 @@ pub struct Main;
 
 impl Main {
     /// A system that runs the "main schedule"
-    pub fn run_main(_world: &mut World /*_run_at_least_once: Local<bool>*/) {
-        todo!()
+    pub fn run_main(world: &mut World, mut run_at_least_once: Local<bool>) {
+        if !*run_at_least_once {
+            world.resource_scope(|world, order: Mut<MainScheduleOrder>| {
+                for &label in &order.startup_labels {
+                    let _ = world.try_run_schedule(label);
+                }
+            });
+            *run_at_least_once = true;
+        }
+
+        world.resource_scope(|world, order: Mut<MainScheduleOrder>| {
+            for &label in &order.labels {
+                let _ = world.try_run_schedule(label);
+            }
+        });
     }
 }
 
@@ -191,10 +206,10 @@ impl Plugin for MainSchedulePlugin {
         fixed_main_loop_schedule.set_executor_kind(ExecutorKind::SingleThreaded);
 
         app.add_schedule(main_schedule)
-            // .add_schedule(fixed_main_schedule)
-            // .add_schedule(fixed_main_loop_schedule)
+            .add_schedule(fixed_main_schedule)
+            .add_schedule(fixed_main_loop_schedule)
             .init_resource::<MainScheduleOrder>()
-            // .init_resource::<FixedMainScheduleOrder>()
+            .init_resource::<FixedMainScheduleOrder>()
             .add_systems(Main, Main::run_main);
         // .add_systems(FixedMain, FixedMain::run_fixed_main)
         // .configure_sets(

@@ -35,4 +35,9 @@ impl DebugName {
             name: Cow::Borrowed(type_name::<T>()),
         }
     }
+
+    // /// Get the [`ShortName`] corresponding to this debug name
+    // pub fn shortname(&self) -> ShortName<'_> {
+    //     todo!()
+    // }
 }

@@ -1,3 +1,4 @@
+use crate::component::ComponentId;
 use alloc::vec::Vec;
 use core::{hash::Hash, marker::PhantomData};
 use nonmax::NonMaxUsize;
@@ -89,9 +90,19 @@ macro_rules! impl_sparse_set {
             /// Returns a mutable reference to the value for `index`
             pub fn get_mut(&mut self, index: I) -> Option<&mut V> {
                 let dense = &mut self.dense;
-                self.sparse.get(index).map(move |dense_index| {
-                    unsafe { dense.get_unchecked_mut(dense_index.get()) }
-                })
+                self.sparse
+                    .get(index)
+                    .map(move |dense_index| unsafe { dense.get_unchecked_mut(dense_index.get()) })
+            }
+
+            /// Returns an iterator visiting all values mutably in arbitrary order
+            pub fn values_mut(&mut self) -> impl Iterator<Item = &mut V> {
+                self.dense.iter_mut()
+            }
+
+            /// Returns an iterator visiting all key-value pairs in arbitrary order
+            pub fn iter_mut(&mut self) -> impl Iterator<Item = (&I, &mut V)> {
+                self.indices.iter().zip(self.dense.iter_mut())
             }
         }
     };
@@ -139,3 +150,15 @@ macro_rules! impl_sparse_set_index {
 }
 
 impl_sparse_set_index!(u8, u16, u32, u64, usize);
+
+//--------------------------------------------------------------------------------------------------
+
+/// A sparse data structure of [`Component`]
+#[derive(Debug)]
+pub struct ComponentSparseSet {}
+
+/// A collection of [`ComponentSparseSet`] storages, indexed by [`ComponentId`]
+#[derive(Default)]
+pub struct SparseSets {
+    sets: SparseSet<ComponentId, ComponentSparseSet>,
+}

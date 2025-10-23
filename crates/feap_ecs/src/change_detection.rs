@@ -1,6 +1,9 @@
 //! Types that detect when their internal data mutate
 
-use crate::{component::{Tick, TickCells}, resource::Resource};
+use crate::{
+    component::{Tick, TickCells},
+    resource::Resource,
+};
 use core::{
     marker::PhantomData,
     ops::{Deref, DerefMut},
@@ -179,6 +182,16 @@ impl<T: ?Sized> MaybeLocation<T> {
         MaybeLocation {
             #[cfg(feature = "track_location")]
             value: &self.value,
+            marker: PhantomData,
+        }
+    }
+
+    /// Converts from `&mut MaybeLocation<T>` to `MaybeLocation<&mut T>`
+    #[inline]
+    pub const fn as_mut(&mut self) -> MaybeLocation<&mut T> {
+        MaybeLocation {
+            #[cfg(feature = "track_location")]
+            value: &mut self.value,
             marker: PhantomData,
         }
     }
