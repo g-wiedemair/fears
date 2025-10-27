@@ -10,3 +10,4 @@ edition = "2024"
 rust-version = "1.88.0"
 
 [workspace.dependencies]
+largeint = { version = "0.1" }

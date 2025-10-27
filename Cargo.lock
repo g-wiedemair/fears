@@ -5,3 +5,16 @@ version = 4
 [[package]]
 name = "feap_editor"
 version = "0.1.0"
+
+[[package]]
+name = "feap_license"
+version = "0.1.0"
+dependencies = [
+ "largeint",
+]
+
+[[package]]
+name = "largeint"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0f67ed1c2c77d1236a185d33be8ea766e172d62cd8f326427352b55f641331f"
