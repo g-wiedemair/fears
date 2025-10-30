@@ -5,5 +5,13 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-num-traits.workspace = true
-num-bigint.workspace = true
+chrono.workspace = true
+rand.workspace = true
+
+crypto-bigint = { version = "0.7.0-rc.8", default-features = false, features = ["zeroize", "alloc"] }
+crypto-primes = { version = "0.7.0-pre.2", default-features = false }
+zeroize = { version = "1.8", features = ["alloc"] }
+
+[dev-dependencies]
+num-traits = "0.2"
+num-bigint = "0.4"

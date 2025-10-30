@@ -1,0 +1,11 @@
+[package]
+name = "feap_fenda"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+
+[build-dependencies]
+cc = { version = "1.2", features = ["parallel"] }
+fortranc = { version = "0.1" }
