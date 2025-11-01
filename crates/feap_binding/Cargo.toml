@@ -1,9 +1,11 @@
 [package]
-name = "feap_editor"
+name = "feap_binding"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[features]
+parallel = []
+
 [dependencies]
-feap_fenda = { path = "../feap_fenda" }
-lapack = "0.20"
+find-msvc-tools = "0.1"

@@ -1,18 +1,12 @@
 fn main() {
-    // cc::Build::new()
-    //     .file("../../fenda/test.c")
-    //     .flags(["-Wall"])
-    //     .warnings(true)
-    //     .extra_warnings(true)
-    //     .warnings_into_errors(true)
-    //     .compile("test");
+    unsafe { std::env::set_var("MACOSX_DEPLOYMENT_TARGET", "11.0") };
+    
+    feap_binding::Build::new()
+        // .files(["srcf/precision.f90", "srcf/f77_interface.f90", "srcf/fenda.f"])
+        .file("srcf/foo.f90")
+        // .link_lib_modifier("gfortran")
+        // .compiler("/opt/homebrew/Cellar/flang/21.1.4/libexec/flang")
+        .compile("fendaF");
 
-    // fortranc::Build::new()
-    //     .compiler("C:/Program Files (x86)/Intel/oneAPI/compiler/latest/bin/ifx.exe")
-    //     .ranlib("C:/Program Files (x86)/Intel/oneAPI/compiler/latest/bin/xilib.exe")
-    //     .file("../../fenda/foo.f90")
-    //     .warnings(true)
-    //     .extra_warnings(true)
-    //     .warnings_into_errors(true)
-    //     .compile("foo");
+    // cc::Build::new().file("srcf/foo.c").compile("fendaC");
 }

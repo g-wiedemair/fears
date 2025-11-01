@@ -1,8 +1,21 @@
-// From fenda
-unsafe extern "C" {
-    // pub fn test() -> i32;
+//! Bindings to fenda
 
-    // pub fn foo();
-    //
-    // pub fn bar() -> i32;
+#![no_std]
+
+unsafe extern "C" {
+    fn foo();
+    fn bar() -> i32;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_binding() {
+        unsafe {
+            bar();
+            foo();
+        }
+    }
 }
