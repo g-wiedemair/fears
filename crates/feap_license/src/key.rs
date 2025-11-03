@@ -7,7 +7,7 @@ use crate::{
 };
 use core::{cmp::Ordering, fmt, hash};
 use crypto_bigint::{
-    modular::BoxedMontyForm, modular::BoxedMontyParams, BoxedUint, Integer, NonZero, Odd, Resize,
+    BoxedUint, Integer, NonZero, Odd, Resize, modular::BoxedMontyForm, modular::BoxedMontyParams,
 };
 use rand::CryptoRng;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -259,6 +259,7 @@ impl PrivateKeyParts for RsaPrivateKey {
     }
 }
 
+#[allow(dead_code)]
 impl RsaPrivateKey {
     /// Default exponent for RSA keys
     const EXP: u64 = 65537;
@@ -466,6 +467,7 @@ impl RsaPrivateKey {
     }
 }
 
+#[allow(dead_code)]
 impl RsaPublicKey {
     /// Minimum value of the public exponent `e`.
     pub const MIN_PUB_EXPONENT: u64 = 2;

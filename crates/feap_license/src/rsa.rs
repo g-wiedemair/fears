@@ -1,18 +1,19 @@
 use crate::{
     error::{Error, Result},
     key::{self, PrivateKeyParts, PublicKeyParts, RsaPrivateKey, RsaPublicKey},
-    padding::{uint_to_no_pad, uint_to_zeroizing_no_pad, PaddingScheme},
+    padding::{PaddingScheme, uint_to_no_pad, uint_to_zeroizing_no_pad},
     signature::SignatureScheme,
 };
 use core::cmp::Ordering;
 use crypto_bigint::{
-    modular::{BoxedMontyForm, BoxedMontyParams}, rand_core::TryCryptoRng, BoxedUint,
-    NonZero,
-    Resize,
+    BoxedUint, NonZero, Resize,
+    modular::{BoxedMontyForm, BoxedMontyParams},
+    rand_core::TryCryptoRng,
 };
 
 /// Encryption using RSA
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[allow(dead_code)]
 pub struct RsaEncrypt;
 
 impl PaddingScheme for RsaEncrypt {

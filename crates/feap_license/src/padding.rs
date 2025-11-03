@@ -27,8 +27,6 @@ pub trait PaddingScheme {
 /// Converts input to the new vector of the given length, using BE and with 0s left padded
 #[inline]
 pub(crate) fn uint_to_zeroizing_no_pad(input: BoxedUint, padded_len: usize) -> Result<Vec<u8>> {
-    let leading_zeros = input.leading_zeros() as usize / 8;
-
     let m = Zeroizing::new(input);
     let m = Zeroizing::new(m.to_be_bytes());
 

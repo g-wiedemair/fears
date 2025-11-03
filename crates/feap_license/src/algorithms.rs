@@ -1,12 +1,13 @@
 use crate::error::{Error, Result};
 use crypto_bigint::{BoxedUint, NonZero, Odd, Resize};
 use crypto_primes::{
+    Flavor,
     hazmat::{SetBits, SmallFactorsSieveFactory},
-    is_prime,
-    sieve_and_find, Flavor,
+    is_prime, sieve_and_find,
 };
 use rand::CryptoRng;
 
+#[allow(dead_code)]
 pub struct RsaPrivateKeyComponents {
     pub n: Odd<BoxedUint>,
     pub e: BoxedUint,
@@ -20,6 +21,7 @@ pub struct RsaPrivateKeyComponents {
 /// the private keys are not. Thus it may not be possible to export multi-prime
 /// private keys in certain formats or to subsequently import them into other code.
 /// [1]: https://patents.google.com/patent/US4405829A/en
+#[allow(dead_code)]
 pub(crate) fn generate_multi_prime_key_with_exp<R: CryptoRng + ?Sized>(
     rng: &mut R,
     nprimes: usize,

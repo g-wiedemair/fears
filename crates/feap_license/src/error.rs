@@ -3,6 +3,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug, Eq, PartialEq)]
 #[non_exhaustive]
+#[allow(dead_code)]
 pub enum Error {
     /// Invalid prime value.
     InvalidPrime,

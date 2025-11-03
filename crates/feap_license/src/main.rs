@@ -23,6 +23,7 @@ const ISSUER: &str = "license@feap.at";
 // Feap version
 const FENDA_VERSION: &str = "Fenda5.4";
 
+#[allow(dead_code)]
 fn create_keys() -> RsaPrivateKey {
     let mut rng = rand::rng();
     let bits = 1024;
@@ -125,12 +126,12 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use crate::{D, E, N, P, Q};
     use crate::{
         create_keys_from_components,
         key::RsaPublicKey,
         rsa::{RsaEncrypt, RsaSign},
     };
-    use crate::{D, E, N, P, Q};
     use num_bigint::{BigInt, Sign};
     use num_traits::Num;
     use std::ops::{Mul, Sub};
