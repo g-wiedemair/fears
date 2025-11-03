@@ -36,8 +36,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37521ac7aabe3d13122dc382493e20c9416f299d2ccd5b3a5340a2570cdeb0f3"
 dependencies = [
  "find-msvc-tools",
- "jobserver",
- "libc",
  "shlex",
 ]
 
@@ -58,6 +56,15 @@ dependencies = [
  "num-traits",
  "wasm-bindgen",
  "windows-link",
+]
+
+[[package]]
+name = "cmake"
+version = "0.1.54"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7caa3f9de89ddbe2c607f4101924c5abec803763ae9534e4f4d7d8f84aa81f0"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -91,26 +98,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "feap_binding"
-version = "0.1.0"
-dependencies = [
- "find-msvc-tools",
-]
-
-[[package]]
 name = "feap_editor"
 version = "0.1.0"
 dependencies = [
  "feap_fenda",
- "lapack",
 ]
 
 [[package]]
 name = "feap_fenda"
 version = "0.1.0"
 dependencies = [
- "cc",
- "feap_binding",
+ "cmake",
 ]
 
 [[package]]
@@ -169,16 +167,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jobserver"
-version = "0.1.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9afb3de4395d6b3e67a780b6de64b51c978ecf11cb9a462c66be7d4ca9039d33"
-dependencies = [
- "getrandom",
- "libc",
-]
-
-[[package]]
 name = "js-sys"
 version = "0.3.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -186,26 +174,6 @@ checksum = "b011eec8cc36da2aab2d5cff675ec18454fad408585853910a202391cf9f8e65"
 dependencies = [
  "once_cell",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "lapack"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "508f7f48955e5e4ec3feb771a4d981c6e59ff2400d750cf41733a3350fdb2dc4"
-dependencies = [
- "lapack-sys",
- "libc",
- "num-complex",
-]
-
-[[package]]
-name = "lapack-sys"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "314b879030845b68571809a6978e52d3b67ac5fba07e77b1b317b484092e2fb5"
-dependencies = [
- "libc",
 ]
 
 [[package]]
@@ -233,15 +201,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
- "num-traits",
-]
-
-[[package]]
-name = "num-complex"
-version = "0.4.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
-dependencies = [
  "num-traits",
 ]
 

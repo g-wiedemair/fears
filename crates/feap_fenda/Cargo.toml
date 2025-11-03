@@ -7,5 +7,4 @@ rust-version.workspace = true
 [dependencies]
 
 [build-dependencies]
-cc = { version = "1.2", features = ["parallel"] }
-feap_binding = { path = "../feap_binding", features = [] }
+cmake = "0.1"

@@ -6,4 +6,3 @@ rust-version.workspace = true
 
 [dependencies]
 feap_fenda = { path = "../feap_fenda" }
-lapack = "0.20"

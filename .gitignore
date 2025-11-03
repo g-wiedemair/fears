@@ -1,10 +1,20 @@
+# System generated files
+.DS_Store
+
+# IDE
 .idea/
 .vscode/
 
+# Build artefacts
 target/
 build/
 
+# Test directories
 srce/
-fenda/
 test/
+
+# Test files
 *WID
+winid.exe
+*.f
+*.c

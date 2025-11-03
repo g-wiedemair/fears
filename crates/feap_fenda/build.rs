@@ -1,12 +1,12 @@
-fn main() {
-    unsafe { std::env::set_var("MACOSX_DEPLOYMENT_TARGET", "11.0") };
-    
-    feap_binding::Build::new()
-        // .files(["srcf/precision.f90", "srcf/f77_interface.f90", "srcf/fenda.f"])
-        .file("srcf/foo.f90")
-        // .link_lib_modifier("gfortran")
-        // .compiler("/opt/homebrew/Cellar/flang/21.1.4/libexec/flang")
-        .compile("fendaF");
+use cmake::Config;
+use std::path::PathBuf;
 
-    // cc::Build::new().file("srcf/foo.c").compile("fendaC");
+fn main() {
+    let dst = Config::new(".").generator_toolset("fortran=ifx").build();
+
+    println!("cargo:rustc-link-search={}", dst.display());
+    println!("cargo:rustc-link-lib=foo");
+
+    let fc_lib_pwd = PathBuf::from("C:/Program Files (x86)/Intel/oneAPI/compiler/latest/lib");
+    println!("cargo:rustc-link-search={}", fc_lib_pwd.to_str().unwrap());
 }
