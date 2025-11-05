@@ -1,10 +1,3 @@
-cmake_minimum_required(VERSION 3.29)
-
-project(foo
-    VERSION 0.1.0
-    LANGUAGES Fortran
-)
-
 set(SRC
         foo.f90
         bar.f

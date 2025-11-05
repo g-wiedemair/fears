@@ -1,8 +1,14 @@
-//! Bindings to fenda
+pub mod database;
+pub mod project;
+mod error;
 
-#![no_std]
+//--------------------------------------------------------------------------------------------------
+// Bindings to fenda
 
 unsafe extern "C" {
-    pub fn foo();
-    pub fn bar();
+    /// Definition of cpu storage
+    pub fn getstorage();
+
+    /// Fenda main control program
+    pub fn fmacro(input: &i32);
 }

@@ -10,6 +10,7 @@ list(APPEND PLATFORM_LINK_LIBS
         advapi32
 )
 
+string(APPEND CMAKE_Fortran_FLAGS_DEBUG " /Z7 /debug:full")
 
 string(APPEND CMAKE_C_FLAGS " /nologo /J /Gd /MP /bigobj /Zc:inline")
 
@@ -18,5 +19,5 @@ string(APPEND CMAKE_C_FLAGS_DEBUG " /MDd")
 string(APPEND CMAKE_C_FLAGS_RELEASE " /MD")
 
 # no default lib
-string(APPEND PLATFORM_LINKFLAGS_RELEASE " /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrt.lib")
-string(APPEND PLATFORM_LINKFLAGS_DEBUG " /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib")
+string(APPEND PLATFORM_LINKFLAGS_RELEASE " /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib")
+string(APPEND PLATFORM_LINKFLAGS_DEBUG " /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrt.lib")
