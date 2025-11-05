@@ -9,6 +9,9 @@
 target/
 build/
 build_feap/
+*.exe
+*.pdb
+*.dll
 
 # Test directories
 srce/
@@ -24,3 +27,8 @@ winid.exe
 *.msg
 *.fdm
 *.dir
+*.dy
+*.d0
+*.f0
+*.ilk
+*.mm*

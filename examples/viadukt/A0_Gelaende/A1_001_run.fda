@@ -1,0 +1,25 @@
+Desc ***************************************************************************
+Desc *                                                                         *
+Desc *          9780 OEBB_St.Valentin-Tarvis                                   *
+Desc *          2D - Analyse                                                   *
+Desc *                                                                         *
+Desc * WiG                                                                     *
+Desc * Jul 2024                                                                *
+Desc ***************************************************************************
+*
+** Parameter
+*  Modell
+:1 = 0
+*  Streckenklasse
+:2 = 0
+*  Laststellung
+:3 = 0
+*  Temperatur
+:4 = 1
+*
+include "../Grundlagen/Parameter"
+*
+include "../System/V02_System"
+include "../System/V02_Load_Aufbau"
+
+stop
