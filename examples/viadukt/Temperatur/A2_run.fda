@@ -1,0 +1,16 @@
+Desc ***************************************************************************
+Desc *                                                                         *
+Desc *          9780 OEBB - St.Valentin - Tarvis                               *
+Desc *          2D - Analyse                                                   *
+Desc *                                                                         *
+Desc * WiG                                                                     *
+Desc * Jul 2024                                                                *
+Desc ***************************************************************************
+*
+
+** Temperatur
+:51 = 5.
+
+include "../System/T02_System"
+
+stop

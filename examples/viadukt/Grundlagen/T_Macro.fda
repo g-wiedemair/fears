@@ -1,0 +1,33 @@
+*   +------------------------------------------------------------+
+*   |                                                            |
+*   |                         M a c r o                          |
+*   |                                                            |
+*   +------------------------------------------------------------+
+
+:if :51 > 0 :goto l1
+:gen stop
+:lbl l1
+:gen prop 0.0 0.0  -:51   1.99239e-7  -0.523599
+:end
+
+  form
+  print load short
+  matrix 1 2
+
+* Schleife bis zum ersten Nulldurchgang der Sinuslinie
+
+  startloop 49
+    dynamic integration type 2   delt 52560.0
+    solution
+  endloop
+
+  startloop 30        * 30
+    startloop 150     * 150
+      dynamic integration type 2   delt 52560.0
+      solution
+    endloop
+    plot displacements     file 0
+    define data flow mises file 0
+  endloop
+
+end

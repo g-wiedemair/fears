@@ -1,0 +1,166 @@
+Desc ***********************************************************************         
+Desc *                                                                     *         
+Desc *   Testbeispiel fuer 3-D Stabelement                                 *         
+Desc *                                                                     *         
+Desc *   ***  S b e a m  ***                                               *         
+Desc *                                                                     *         
+Desc *   Kragstuetze H = 15.0 m                                            *         
+Desc *   Lauf 1: Eigengewicht;                                             *
+Desc *           vertikale Einzellast 1500 kN oben;                        *         
+Desc *                                                     fn = b12-simple *
+Desc ***********************************************************************
+         
+feap
+type threedimensional freedom 6
+                                                 
+Title Stuetze                                                fn = b12-simple
+                                                                                
+joint coordinates                                                               
+ 1 to 11 incr 1  x 0.0   y 0.0   z 0.0  dx 1.e-8    dy 1.5  dz 1.e-12           
+12               x 0.0   y 0.0   z 0.0
+13               x 0.0   y 0.0   z 1.e20
+                                                                                
+  1 to 12 overlay depend y sin dx -0.03 0.1047198 1.5708
+
+joint support * remove
+ 1 to 13 trans z rota y
+
+joint constraint
+ 12 trans x y z rota x y z equi 1
+                                                                                
+************************************************************************
+*                                                                      *
+*                 E l e m e n t      T o p o l o g y                   *
+*                                                                      *
+************************************************************************
+
+Element incidences                                                              
+ 1  1  2 13
+loop 9 incr 1 1 1 0                                                             
+11  1
+
+************************************************************************
+*                                                                      *
+*           S k e w    C o o r d i n a t e    S y s t e m s            *
+*                                                                      *
+************************************************************************
+
+Skew system   7  12 13  1 11  YDEF
+                                                                                
+************************************************************************
+*                                                                      *
+*               M a t e r i a l     P r o p e r t i e s                *
+*                                                                      *
+************************************************************************
+*
+*   Material    1
+*
+Material number    1 type 2   "Material    1"
+ 1 e11   3.000000E+07  e22   3.000000E+07  e33   3.000000E+07                  &
+   nu12  0.100000E-02  nu13  0.100000E-02  nu23  0.100000E-02                  &
+   g12   1.500000E+07  g13   1.500000E+07  g23   1.500000E+07                  &
+   dc1   0.100000E-04  dc2   0.100000E-04  dc3   0.100000E-04                  &
+   density           2.550000E+00                                              &
+   dsc               22500.000000
+*
+*   Stabquerschnitt
+*
+Material number   50 type 3   "Stabquerschnitt"
+           base   6.00000E-01  height 3.00000E+00                               
+*
+*   Gebrauchslast  
+*
+Material number   70 type 3   "Gebrauchslast"
+Safety dead 1  1.00
+*
+*   Tragsicherheit 
+*
+Material number   80 type 3   "Tragsicherheit"
+Safety dead 1  1.35
+
+************************************************************************
+*                                                                      *
+*                         C o n s t a n t e s                          *
+*                                                                      *
+************************************************************************
+
+Constantes
+ 1 to 10  CS 50 50 Material 1 acce 9.806 model 3
+11        E 1.00
+                                                                                
+************************************************************************
+*                                                                      *
+*               E l e m e n t       P r o p e r t i e s                *
+*                                                                      *
+************************************************************************
+
+Element properties                                                              
+ 1 to 10 type sbeam   samin 0.9 samax 1.15
+11       type clamp   ax 1.0e10 ay 1.0e10 az 1.0e10 &
+                      ix 1.0e10 iy 1.0e10 iz 1.0e10
+
+************************************************************************
+*                                                                      *
+*           E l e m e n t    G r o u p s                               *
+*                                                                      *
+************************************************************************
+
+Element Group   8
+*
+*    Part number   7
+*
+     1 to     10 incr 1  add
+
+Element Group  14
+    11 add
+
+************************************************************************
+*                                                                      *
+*           E l e m e n t    o u t p u t   l o c a t i o n s           *
+*                                                                      *
+************************************************************************
+
+Element output locations
+ 1 to 10 location 1 2 3 4 5 6 7 8
+
+************************************************************************
+*                                                                      *
+*                          B e l a s t u n g                           *
+*                                                                      *
+*                          Eigengewicht                                *
+*                          Einzellast                                  *
+*                                                                      *
+************************************************************************
+
+LOAD 1 Eigengewicht                                                             
+dead load                                                                       
+ 1 to 10 force y -1.0
+
+LOAD 2 Auflast
+joint load
+ 11 force y -1500.0
+
+LOAD 11 Combine load
+combine load                                                                    
+ 1 to 23 factor 1.0                                                             
+                                                                                
+*   +------------------------------------------------------------+
+*   |                                                            |
+*   |                         M a c r o                          |
+*   |                                                            |
+*   +------------------------------------------------------------+
+  
+   equation                                                                     
+   print steps
+   form
+   print material number 50
+   print load short                                                             
+   matrix
+   solution
+   print stresses
+   print supports short
+   print displacements
+   plot displacements file 1
+   end
+
+   stop                                                                         

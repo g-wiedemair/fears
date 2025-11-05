@@ -1,0 +1,192 @@
+Material number    1 type 2   "Gewoelbe_Stein_weich"
+ 1 e11   3.000000E+06  e22   3.000000E+06  e33   3.000000E+06          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   1.250000E+06  g13   1.250000E+06  g23   1.250000E+06          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.4                                             &
+   phi                89.0                                             &
+   cohe            40000.0                                             &
+   tf                 20.0                                             
+
+Material number    2 type 2   "Gewoelbe_Stein"
+ 1 e11   1.000000E+07  e22   1.000000E+07  e33   1.000000E+07          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   0.416667E+07  g13   0.416667E+07  g23   0.416667E+07          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.4                                             &
+   phi                89.0                                             &
+   cohe            40000.0                                             &
+   tf                 20.0                                             
+
+Material number    3 type 2   "Gewoelbe_Ziegel_weich"
+ 1 e11   1.000000E+06  e22   1.000000E+06  e33   1.000000E+06          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   0.416667E+06  g13   0.416667E+06  g23   0.416667E+06          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.4                                             &
+   phi                80.0                                             &
+   cohe            20000.0                                             &
+   tf                 20.0                                             
+
+Material number    4 type 2   "Gewoelbe_Ziegel"
+ 1 e11   3.000000E+06  e22   3.000000E+06  e33   3.000000E+06          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   1.250000E+06  g13   1.250000E+06  g23   1.250000E+06          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.4                                             &
+   phi                80.0                                             &
+   cohe            20000.0                                             &
+   tf                 20.0                                             
+
+Material number    5 type 2   "Gewoelbe_Granit_weich"
+ 1 e11   6.000000E+06  e22   6.000000E+06  e33   6.000000E+06          &
+   nu12  0.100000E+00  nu13  0.100000E+00  nu23  0.100000E+00          &
+   g12   0.272727E+07  g13   0.272727E+07  g23   0.272727E+07          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.6                                             &
+   phi                89.0                                             &
+   cohe            40000.0                                             &
+   tf                 20.0                                             
+
+Material number    6 type 2   "Gewoelbe_Granit"
+ 1 e11   2.000000E+07  e22   2.000000E+07  e33   2.000000E+07          &
+   nu12  0.100000E+00  nu13  0.100000E+00  nu23  0.100000E+00          &
+   g12   0.909090E+07  g13   0.909090E+07  g23   0.909090E+07          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.6                                             &
+   phi                89.0                                             &
+   cohe            40000.0                                             &
+   tf                 20.0  
+*
+*   Aufmauerung
+*
+Material number   11 type 2   "Aufmauerung weich"
+ 1 e11   6.000000E+05  e22   6.000000E+05  e33   6.000000E+05          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   2.500000E+05  g13   2.500000E+05  g23   2.500000E+05          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.2                                             &
+   phi                35.0                                             &
+   cohe               10.0                                             &
+   tf                 10.0                                             
+
+Material number   12 type 2   "Aufmauerung - Mischung"
+ 1 e11   6.000000E+06  e22   6.000000E+06  e33   6.000000E+06          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   2.500000E+06  g13   2.500000E+06  g23   2.500000E+06          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.2                                             &
+   phi                45.0                                             &
+   cohe               10.0                                             &
+   tf                 10.0                                             
+
+*
+*   BODEN
+*
+Material number   21 type 2   "Hinterfuellung"
+ 1 e11   1.000000E+05  e22   1.000000E+05  e33   1.000000E+05          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   0.416667E+05  g13   0.416667E+05  g23   0.416067E+05          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density             2.0                                             &
+   phi                35.0                                             &
+   cohe                0.1                                             & 
+   tf                  0.1                                            
+
+* bis jetzt unbenutzt
+Material number   22 type 2   "Untergrund Fels A"
+ 1 e11   1.100000E+07  e22   1.100000E+07  e33   1.100000E+07          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   0.458333E+07  g13   0.458333E+07  g23   0.458333E+07          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density               2.4                                           &
+   phi                  40.000000                                      &
+   cohe               2000.000000                                      &
+   tf                   20.0                                           &
+   RefStrain             0.0
+ 2 phi                  35.000000                                      &
+   cohe                500.000000                                      &
+   RefStrain             0.0025
+
+Material number   23 type 2   "Untergrund Fels B"
+ 1 e11   0.900000E+07  e22   0.900000E+07  e33   0.900000E+07          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   0.375000E+07  g13   0.375000E+07  g23   0.375000E+07          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density               2.4                                           &
+   phi                  40.000000                                      &
+   cohe               2000.000000                                      &
+   tf                   20.0                                           &
+   RefStrain             0.0
+ 2 phi                  35.000000                                      &
+   cohe                500.000000                                      &
+   RefStrain             0.0025
+
+Material number   25 type 2   "Untergrund Kies_steif"
+ 1 e11   3.000000E+06  e22   3.000000E+06  e33   3.000000E+06          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   1.250000E+06  g13   1.250000E+06  g23   1.250000E+06          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density               2.1                                           &
+   phi                  37.000000                                      &
+   cohe                100.000000                                      &
+   tf                   10.0                                           &
+   RefStrain             0.0
+ 2 phi                  32.000000                                      &
+   cohe                 20.000000                                      &
+   RefStrain             0.0025
+
+Material number   26 type 2   "Untergrund Kies"
+ 1 e11   1.000000E+06  e22   1.000000E+06  e33   1.000000E+06          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   0.416667E+06  g13   0.416667E+06  g23   0.416667E+06          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density               2.1                                           &
+   phi                  37.000000                                      &
+   cohe                100.000000                                      &
+   tf                   10.0                                           &
+   RefStrain             0.0
+ 2 phi                  32.000000                                      &
+   cohe                 20.000000                                      &
+   RefStrain             0.0025
+
+Material number   28 type 2   "Beton"
+ 1 e11   3.000000E+07  e22   3.000000E+07  e33   3.000000E+07          &
+   nu12  0.166667E+00  nu13  0.166667E+00  nu23  0.166667E+00          &
+   g12   1.285714E+07  g13   1.285714E+07  g23   1.285714E+07          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density               2.55                                            
+
+
+Material number   29 type 2   "Stahl"
+ 1 e11   2.100000E+08  e22   2.100000E+08  e33   2.100000E+08          &
+   nu12  0.300000E+00  nu13  0.300000E+00  nu23  0.300000E+00          &
+   g12   0.807692E+08  g13   0.807692E+06  g23   0.807692E+06          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.600000E-05          &
+   density               8.00                                            
+
+*
+*   FUGEN
+*
+Material number   31 type 2   "Fuge Gewoelbe-Hinterfuellung"
+ 1 e11 1.0e10  g12 1.0e5 phi 23. cohe 0.1 tf 0.1
+
+*
+*   OBERFLAECHEN
+*
+Material number   10 type 2   "Oberflaechen"
+ 1 e11   3.000000E+05  e22   3.000000E+05  e33   3.000000E+05          &
+   nu12  0.200000E+00  nu13  0.200000E+00  nu23  0.200000E+00          &
+   g12   1.250000E+05  g13   1.250000E+05  g23   1.250000E+05          &
+   dc1   0.600000E-05  dc2   0.600000E-05  dc3   0.000000E-05          &
+   density           0.
+
+*
+*   QUERSCHNITTE
+*
+Material number   51 type 3   "Staebe_Oberflaeche"
+   base 1.0 height 0.001 
+
+Material number   59 type 3   "Stahlplatte"
+   base 1.0 height 0.020
+

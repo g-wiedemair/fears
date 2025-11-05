@@ -8,6 +8,7 @@
 # Build artefacts
 target/
 build/
+build_feap/
 
 # Test directories
 srce/
@@ -19,3 +20,7 @@ winid.exe
 *.f
 *.c
 *.pdf
+*.lst
+*.msg
+*.fdm
+*.dir

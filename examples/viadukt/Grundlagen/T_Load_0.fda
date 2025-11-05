@@ -1,0 +1,29 @@
+************************************************************************
+*                                                                      *
+*   A u s g a n g s t e m p e r a t u r                                *
+*                                                                      *
+************************************************************************
+
+:gen LOAD Initialisierung mit Ausgangstemperatur
+:gen INITIAL STRESS read
+:gen INITIAL STRESS save
+:gen initial Potential
+:gen  1 to :209 node 100001 100003 100004 Potential  wa 0.0 wb 0.0
+:end
+
+
+* evaluate limit 0.0001
+  evaluate noLoadTable
+  strfile minimum delete
+
+* mesh generate
+
+  equation optimize 0
+  matrix 1 0 0
+  form
+  print load short
+  solution
+  plot displacements load 1
+  end
+
+

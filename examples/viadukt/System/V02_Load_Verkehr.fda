@@ -1,0 +1,34 @@
+$
+************************************************************************
+*                                                                      *
+*                     Lauf     Verkehr                                 *
+*                                                                      *
+************************************************************************
+
+* Breite Last aus Ausbreitung
+:135 = 4.246
+* Dynamischer Beiwert
+:133 = 1.344
+* Beschleunigen/Bremsen beruecksichtigen
+:101 = 1
+* Bremsen aus run file
+:if :6 <> 0 :101 = 0
+
+* Abstand bis Mitte Gewoelbe
+:141 = 19.109
+
+* Laststellung
+:if :3 <> 2 :goto le
+:gen * Gleichlast vorne 
+:102 = 1
+:goto le
+:lbl lf
+:gen stop
+:lbl le
+:end
+
+* Knoten fuer Achse
+:301 = 8157
+:302 = 8155
+
+include "../Grundlagen/Load_ONR_2D"

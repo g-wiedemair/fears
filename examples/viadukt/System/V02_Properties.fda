@@ -1,0 +1,227 @@
+********************************************************************************
+*                                                                              *
+*      F:\9\9780_                                                              *
+*                                                                              *
+*      FEGRAF 5.4M6   Pre- Postprocessing                                      *
+*                                                                              *
+*      Date: 18-Feb-2025                                                       *
+*      Time: 16:28:17                                                          *
+*                                                                              *
+********************************************************************************
+Element Properties
+*
+*  Part number   1
+*
+     1 to    100 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number   2
+*
+   101 to    260 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  10
+*
+   261 to    312 incr 1  type SBEAM skew 10
+*
+*  Part number  11
+*
+   313 to    412 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  16
+*
+   413 to    512 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  21
+*
+   513 to    572 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  22
+*
+   573 to    686 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  23
+*
+   687 to    838 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  25
+*
+   839 to    914 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  26
+*
+   915 to    952 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  30
+*
+   953 to    990 incr 1  type SBEAM skew 30
+*
+*  Part number  31
+*
+   991 to   1230 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  32
+*
+  1231 to   1470 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  33
+*
+  1471 to   1710 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  34
+*
+  1711 to   2070 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  35
+*
+  2071 to   2250 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  36
+*
+  2251 to   2490 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  37
+*
+  2491 to   2610 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  38
+*
+  2611 to   2670 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  40
+*
+  2671 to   2730 incr 1  type SBEAM skew 40
+*
+*  Part number  41
+*
+  2731 to   2762 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  42
+*
+  2763 to   2790 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  43
+*
+  2791 to   2798 incr 1  type SBEAM skew 43
+*
+*  Part number  44
+*
+  2799 to   4502 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  47
+*
+  4503 to   4638 incr 1  type SBEAM skew 47
+*
+*  Part number  48
+*
+  4639 to   4750 incr 1  type SBEAM skew 48
+*
+*  Part number  49
+*
+  4751 to   4822 incr 1  type SBEAM skew 49
+*
+*  Part number  50
+*
+  4823 to   4898 incr 1  type SBEAM skew 50
+*
+*  Part number  61
+*
+  4899 to   4936 incr 1  type GAP rm-MidNode
+  4899 to   4921 incr 1  TLRef 02
+  4922 to   4936 incr 1  TLRef 03
+*
+*  Part number  62
+*
+  4937 to   4954 incr 1  type GAP rm-MidNode
+  4937 to   4945 incr 1  TLRef 01
+  4946 to   4954 incr 1  TLRef 04
+*
+*  Part number  63
+*
+  4955 to   4970 incr 1  type GAP rm-MidNode
+  4955 to   4962 incr 1  TLRef 01
+  4963 to   4970 incr 1  TLRef 04
+*
+*  Part number  64
+*
+  4971 to   4986 incr 1  type GAP rm-MidNode
+  4971 to   4978 incr 1  TLRef 01
+  4979 to   4986 incr 1  TLRef 04
+*
+*  Part number  65
+*
+  4987 to   5010 incr 1  type GAP rm-MidNode
+  4987 to   4998 incr 1  TLRef 01
+  4999 to   5010 incr 1  TLRef 04
+*
+*  Part number  66
+*
+  5011 to   5022 incr 1  type GAP rm-MidNode
+  5011 to   5016 incr 1  TLRef 01
+  5017 to   5022 incr 1  TLRef 04
+*
+*  Part number  67
+*
+  5023 to   5038 incr 1  type GAP rm-MidNode
+  5023 to   5030 incr 1  TLRef 01
+  5031 to   5038 incr 1  TLRef 04
+*
+*  Part number  68
+*
+  5039 to   5046 incr 1  type GAP rm-MidNode
+  5039 to   5042 incr 1  TLRef 01
+  5043 to   5046 incr 1  TLRef 04
+*
+*  Part number  69
+*
+  5047 to   5050 incr 1  type GAP rm-MidNode
+  5047 to   5048 incr 1  TLRef 01
+  5049 to   5050 incr 1  TLRef 04
+*
+*  Part number 101
+*
+  5051 to   5054 incr 1                                                        &
+       type IPQQ rint 2 sint 2 tint 2 node 8                                &
+            d1 1.00000 d2 1.00000 d3 1.00000 d4 1.00000
+*
+*  Part number  60
+*
+  5055 to   5186 incr 1  type SBEAM skew 60

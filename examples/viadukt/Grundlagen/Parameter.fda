@@ -1,0 +1,75 @@
+echo off
+************************************************************************
+*                                                                      *
+*           P a r a m e t e r                                          *
+*                                                                      *
+************************************************************************
+
+**Modell
+* :1 = 0 .. Modell mit Gelaende
+*      1 .. Modell mit Bettung unten und Gelaende seitlich
+*      2 .. Modell mit Bettung unten und Bettung seitlich
+*      3 .. Modell mit Bettung unten und Erddruck seitlich
+** Streckenklasse
+* :2 = 0 .. Streckenklasse D4
+*      2 .. Streckenklasse D4xLb
+*      3 .. Streckenklasse E5
+** Laststellung
+* :3 =   .. siehe Load_Verkehr
+*           derzeit nur 5 Laststellungen moeglich (filenumber)
+** Temperatur
+* :4 = 0 .. ohne Temp.
+* :4 = 1 .. Winter -15K
+* :4 = 2 .. Sommer +15K 
+*
+** Bremsen
+* :6 = 0 .. mit Bremsen in x+
+* :6 = 1 .. ohne Bremsen
+*
+** Finite-Element-Modell
+* :5 = 0 .. Node 8
+*
+**
+*  Erddruck -> Ruhe phi = 35° -> e = 0.426
+*              erhoehter aktiver Erddruck -> e = 0.33
+*              aktiver Erddruck -> e = 0.22
+*              erhoehter aktiver Erddruck geneigtes Gelaende (35°) 0.25
+*              aktiver Erddruck geneigtes Gelaende (35°) 0.165
+*              erhoehter aktiver Erddruck geneigtes Gelaende (-35°) -> max. Erdruhedruck nach EC
+:251 = 0.33
+:252 = 0.22
+:253 = 0.25
+:254 = 0.165
+:255 = 0.67
+
+* activate with 1
+* Schichtenweise Aufbringung Erddruck
+:203 = 1
+*
+**
+** Fortlaufende N. fuer Construction stage
+** wird automatisch gezaehlt
+:201 = 0
+** Max. Elementn. ohne GAP
+** NOTE: wird fuer Temperatur gebraucht, GAPs muessen danach sein
+**       in System festzulegen
+:209 = 0
+
+:if :1 > 3 :goto tf
+:if :2 > 3 :goto tf
+** NOTE: Bei Laststellung 6 werden andere files überschrieben
+:if :3 > 5 :goto tf
+:if :4 > 2 :goto tf
+:goto te
+:lbl tf
+:gen stop
+:lbl te
+:end
+
+* FEM Node 8
+:5 = 0
+* Filenumber
+:9 = :2 * 20000 + :4 * 1000 + :3 * 3000
+
+*_______________________________________________________________________
+echo on

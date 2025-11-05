@@ -1,0 +1,42 @@
+***************************************************************************
+*                                                                         *
+*                 Materialdaten fuer Temperaturanalyse                    *
+*                                                                         *
+***************************************************************************
+
+*
+*   FELS
+*
+Material number   01 type 2   "FELS"
+ 1 e11 2.8 e22 2.8 e33 2.8  spht 1200.0 density 2600.0
+
+*
+*   Schotter / Schuettung
+*
+Material number   02 type 2   "Schotter/Schuettung"
+ 1 e11 1.0 e22 1.0 e33 1.0  spht 1000.0 density 2100.0
+
+*
+*   Stein 
+*
+Material number   03 type 2   "Stein"
+ 1 e11 2.0 e22 2.0 e33 2.0  spht 1000.0 density 2400.0
+
+
+*
+*   Sperre luftseitig
+*
+Material number   21 type 2   "Stein/Schotter luftseitig"
+ 1 e11 1.0e-5   e22 1.0e-5   e33 1.0e-5 spht 0.0 conv 25.0
+*
+*   Gelaende luftseitig
+*
+Material number   22 type 2   "Gelaende bewachsen"
+ 1 e11 1.0e-5   e22 1.0e-5   e33 1.0e-5 spht 0.0 conv  1.
+
+
+*
+*   OBERFLAECHE
+*
+Material number   51 type 3   "Stabelemente Oberflaeche"
+   base 1.0 height 0.001 

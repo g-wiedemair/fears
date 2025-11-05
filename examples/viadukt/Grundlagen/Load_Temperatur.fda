@@ -1,0 +1,57 @@
+***
+* CS fuer Temperaturlastfaelle > 20
+*
+ :201 = 20
+
+$
+************************************************************************
+*                                                                      *
+*                     Lauf     Temperatur                              *
+*                                                                      *
+************************************************************************
+
+** Temperatur [K]
+* :51 = 5.0
+:if :51 <> 0 :goto la
+:gen stop
+:lbl la
+:end
+
+:7 = 2
+:if :51 > 3 :7 = 1
+:if :51 > 10 :7 = 0
+:7 = :7 * 10000 + 4100
+:8 = :7 + 300
+
+:lbl t0
+:if :4 <> 0 :goto t1
+:gen Load  1 - Temperatur 0
+:gen initial stress read
+:gen initial stress save
+:goto tm
+:lbl t1
+:if :4 <> 1 :goto t2
+:gen Load  1 - Temperatur gleichmaessig -15 Grad
+:gen initial stress read
+:gen initial stress save
+:gen 
+:gen temperatur load
+:gen     1 to :209  file :8
+:goto tm
+:lbl t2
+:if :4 <> 2 :goto t3
+:gen Load  1 - Temperatur gleichmaessig +15 Grad
+:gen initial stress read
+:gen initial stress save
+:gen
+:gen temperatur load
+:gen     1 to :209  file :7
+:goto tm
+:lbl t3
+:if :4 <> 0 :goto tf
+:goto tm
+:lbl tf
+:gen stop
+:lbl tm
+:gen include "Macro"
+:end

@@ -1,0 +1,336 @@
+Desc ***********************************************************************         
+Desc *                                                                     *         
+Desc *   Testbeispiel fuer 3-D Stabelement                                 *         
+Desc *                                                                     *         
+Desc *   ***  S b e a m  ***                                               *         
+Desc *                                                                     *         
+Desc *   Kragstuetze H = 15.0 m                                            *         
+Desc *   sinusf�rmige Imperfektion: 3.0 cm an Kragarmspitze                *         
+Desc *                                                                     *         
+Desc *   Geometrische Nichtlinearitaet mit Kriechen:                       *         
+Desc *                                                                     *         
+Desc *   Lauf 1: Eigengewicht;                                             *         
+Desc *           vertikale Einzellast 1500 kN oben;                        *         
+Desc *           Temperatur -10 Kelvin;                                    *         
+Desc *           Querbelastung von 6.0 kN/m;                               *         
+Desc *           Vorspannung 2 * 1000 kN;                                  *         
+Desc *           die Iteration erfolgt fuer einen Kombinationslastfall.    *
+Desc *           Iteration: modified Newton-Raphson                        *         
+Desc *                                                                     *         
+Desc *   Lauf 2: Kriechen und Schwinden                                    *         
+Desc *           Iteration: Newton-Raphson                                 *         
+Desc *                                                                     *         
+Desc *   Lauf 3: zus�tzliche Querbelastung von 6.0 kN/m                    *         
+Desc *           Iteration: Newton-Raphson                                 *         
+Desc *                                                                     *         
+Desc *                                                     fn = b12-geo    *         
+Desc ***********************************************************************
+         
+feap
+type threedimensional freedom 6
+                                                 
+Title geometrische Nichtlinearitaet mit Kriechen           fn = b12-geo
+                                                                                
+joint coordinates                                                               
+ 1 to 11 incr 1  x 0.0   y 0.0   z 0.0  dx 1.e-8    dy 1.5  dz 1.e-12           
+12               x 0.0   y 0.0   z 0.0
+13               x 0.0   y 0.0   z 1.e20
+                                                                                
+  1 to 12 overlay depend y sin dx -0.03 0.1047198 1.5708
+
+joint support * remove
+ 1 to 13 trans z rota y
+
+joint constraint
+ 12 trans x y z rota x y z equi 1
+                                                                                
+************************************************************************
+*                                                                      *
+*                 E l e m e n t      T o p o l o g y                   *
+*                                                                      *
+************************************************************************
+
+Element incidences                                                              
+ 1  1  2 13
+loop 9 incr 1 1 1 0                                                             
+11  1
+
+************************************************************************
+*                                                                      *
+*           S k e w    C o o r d i n a t e    S y s t e m s            *
+*                                                                      *
+************************************************************************
+
+Skew system   7  12 13  1 11  YDEF
+                                                                                
+************************************************************************
+*                                                                      *
+*               M a t e r i a l     P r o p e r t i e s                *
+*                                                                      *
+************************************************************************
+*
+*   Material    1
+*
+Material number    1 type 2   "Material    1"
+ 1 e11   3.000000E+07  e22   3.000000E+07  e33   3.000000E+07                  &
+   nu12  0.100000E-02  nu13  0.100000E-02  nu23  0.100000E-02                  &
+   g12   1.500000E+07  g13   1.500000E+07  g23   1.500000E+07                  &
+   dc1   0.100000E-04  dc2   0.100000E-04  dc3   0.100000E-04                  &
+   density           2.550000E+00                                              &
+   dsc               22500.000000                                              &
+   tf                22500.000000                                              &
+   creep                 2.000000                                              &
+   shrinkage            -0.000100
+*
+*   Vorspannung
+*
+Material number   11 type 2   "Vorspannung"
+ 1 e11   1.955500E+08  e22   1.955500E+08  e33   1.955500E+08                  &
+   dc1   0.100000E-04  dc2   0.100000E-04  dc3   0.100000E-04                  &
+   dss             1062000.000000                                              &
+   est               0.210000E+09                                              &
+   beta                  0.500000
+*
+*   Stabquerschnitt
+*
+Material number   50 type 3   "Stabquerschnitt"
+           base   6.00000E-01  height 3.00000E+00                               
+*
+*   Gebrauchslast  
+*
+Material number   70 type 3   "Gebrauchslast"
+Safety dead 1  1.00
+*
+*   Tragsicherheit 
+*
+Material number   80 type 3   "Tragsicherheit"
+Safety dead 1  1.35
+
+************************************************************************
+*                                                                      *
+*                         C o n s t a n t e s                          *
+*                                                                      *
+************************************************************************
+
+Constantes
+ 1 to 10  CS 50 50 Material 1 acce 9.806 model 3
+11        E 1.00
+                                                                                
+************************************************************************
+*                                                                      *
+*               E l e m e n t       P r o p e r t i e s                *
+*                                                                      *
+************************************************************************
+
+Element properties                                                              
+ 1 to 10 type sbeam   samin 0.9 samax 1.15
+11       type clamp   ax 1.0e10 ay 1.0e10 az 1.0e10 &
+                      ix 1.0e10 iy 1.0e10 iz 1.0e10
+
+************************************************************************
+*                                                                      *
+*           R e i n f o r c e m e n t                                  *
+*                                                                      *
+************************************************************************
+
+* Huellrohre zur Ermittlung der Randdehnungen Beton
+
+Reinforcement class 0 
+ 1    11 ha +0.00 he +0.00 refer -3 Material 11 layer 1                &
+         v0 0.0 csa -1.0e-8 
+ 1    11 ha -0.00 he -0.00 refer +3 Material 11 layer 2                &
+         v0 0.0 csa -1.0e-8 
+
+* Huellrohre fuer Vorspannkabel
+
+Reinforcement class 0 
+ 1    11 ha +0.09 he +0.09 refer -3 Material 11 layer 3                &
+         v0 0.0 csa -10.0e-4 
+ 1    11 ha -0.09 he -0.09 refer +3 Material 11 layer 4                &
+         v0 0.0 csa -10.0e-4 
+
+* Bewehrung in den 4 Eckpunkten
+
+Reinforcement class 2 
+ 1 11  ha +0.06 he +0.06 refer -2  ptyp 2 order 2.               &
+       csa 2.0e-4 mate 11 layer 9 dz 0.24
+ 1 11  ha -0.06 he -0.06 refer +2  ptyp 2 order 2.               &
+       csa 2.0e-4 mate 11 layer 10 dz 0.24
+ 1 11  ha +0.06 he +0.06 refer -2  ptyp 2 order 2.               &
+       csa 2.0e-4 mate 11 layer 11 dz -0.24
+ 1 11  ha -0.06 he -0.06 refer +2  ptyp 2 order 2.               &
+       csa 2.0e-4 mate 11 layer 12 dz -0.24
+
+************************************************************************
+*                                                                      *
+*           E l e m e n t    G r o u p s                               *
+*                                                                      *
+************************************************************************
+
+Element Group   8
+*
+*    Part number   7
+*
+     1 to     10 incr 1  add
+
+Element Group  14
+    11 add
+
+************************************************************************
+*                                                                      *
+*           E l e m e n t    o u t p u t   l o c a t i o n s           *
+*                                                                      *
+************************************************************************
+
+Element output locations
+ 1 to 10 location 1 2 3 4 5 6 7 8
+
+************************************************************************
+*                                                                      *
+*                          B e l a s t u n g                           *
+*                                                                      *
+*                          Eigengewicht                                *
+*                          Temperatur 2                                 *
+*                          Vorspannung                                 *
+*                                                                      *
+************************************************************************
+
+LOAD 1 Eigengewicht                                                             
+dead load                                                                       
+ 1 to 10 force y -1.0
+
+LOAD 2 Auflast
+joint load
+ 11 force y -1500.0
+                                                                                
+:1 = 3
+:2 = 1                                                                    
+:lbl a                                                                          
+:gen
+:gen LOAD :1                                                                    
+:gen line load                                                                  
+:gen :2 side 1 2 global force x wa +2.5 wb +2.5                               
+:1 = :1 + 1
+:2 = :2 + 1
+:if :2 < 11 :goto a                                                             
+:end
+
+:2 = 1                                                                    
+:lbl a                                                                          
+:gen
+:gen LOAD :1                                                                    
+:gen line load                                                                  
+:gen :2 side 1 2 global force x wa +3.5 wb +3.5                               
+:1 = :1 + 1
+:2 = :2 + 1
+:if :2 < 11 :goto a                                                             
+:end
+                                                                                
+LOAD 23                                                                         
+temperature load                                                                
+ 1 to 10 t 10.0
+                                                                                
+LOAD 24                                                                         
+initial stress read                                                             
+initial stress save                                                             
+prestress load
+ 1 to 11 ha +0.09 he +0.09 refer -3 Material 11 layer 5                &
+         v0 -1000.0 csa 10.0e-4 
+ 1 to 11 ha -0.09 he -0.09 refer +3 Material 11 layer 6                &
+         v0 -1000.0 csa 10.0e-4 
+combine load                                                                    
+ 1 to 23 factor 1.0                                                             
+                                                                                
+*   +------------------------------------------------------------+
+*   |                                                            |
+*   |                         M a c r o                          |
+*   |                                                            |
+*   +------------------------------------------------------------+
+  
+   equation                                                                     
+   print steps
+   form
+   print material number 50
+   print layer
+   print load short                                                             
+      startloop 10
+      matrix 3
+      nonlinear solution type 3 tole 1.0e-10 for load 24
+      next          
+   print stresses
+   print supports short
+   print displacements
+   plot displacements file 1
+   end
+
+************************************************************************
+*                                                                      *
+*                          B e l a s t u n g                           *
+*                                                                      *
+*                          Kriechen                                    *
+*                                                                      *
+************************************************************************
+
+LOAD                                                                       
+initial stress read                                                             
+initial stress save                                                             
+                                                                                
+*   +------------------------------------------------------------+
+*   |                                                            |
+*   |                         M a c r o                          |
+*   |                                                            |
+*   +------------------------------------------------------------+
+  
+*  print steps                                                                  
+   form                                                                         
+   startloop 5
+   creep for load 1 factor 0.20
+      startloop 10                                                              
+      matrix 3
+      nonlinear solution type 3 tole 1.0e-8
+      next   
+   endloop                                                                      
+   print stresses
+   print supports
+   print displacements
+   end                                                                          
+                                                                                
+************************************************************************
+*                                                                      *
+*                          B e l a s t u n g                           *
+*                                                                      *
+*                          Querlast                                    *
+*                                                                      *
+************************************************************************
+
+LOAD                                                                       
+initial stress read                                                             
+initial stress save                                                             
+hydrostatic load                                                                       
+ 1 to 10 node 1 11 13 global force x wa +6.0 wb +6.0
+
+*   +------------------------------------------------------------+
+*   |                                                            |
+*   |                         M a c r o                          |
+*   |                                                            |
+*   +------------------------------------------------------------+
+
+   evaluate dead 1 load 1
+
+   print steps
+   form
+      startloop 10
+      matrix 3
+      nonlinear solution type 3 tole 1.0e-12 * bfgs
+      next
+   print stresses
+   print supports load 1
+   print displacements
+   plot displacements file 2
+   define data beam f-x load 1 file 1
+*  define data maxmin beam nsc material 70 file 3 prefix "nsc"
+*  define data max beam pn  material 1 file 1
+   define data beam reinforcement material 80 file 3 prefix "as0"
+   end
+                                                                          
+   stop                                                                         

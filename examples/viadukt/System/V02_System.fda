@@ -1,0 +1,191 @@
+Fenda
+Pardiso
+type Plane Strain freedom 6 Ldiag 1.0e-15 * eqsplit         
+Model Fem1                                                                  
+*
+Units  1 1.00000000E+00 1.00000000E+00 1.00000000E+00 2.73150000E+02
+*
+Title 9780 OEBB_St.Valentin-Tarvis - 01_DerntlGraben_km_15_304 - 2D-Analyse
+
+:gen define filenumber :9
+:end
+
+echo off
+include "V02_Nodes"
+include "V02_Elements"
+include "V02_Constantes"
+include "V02_Properties"
+echo on
+
+
+** Max. Elementn. ohne GAP
+** NOTE: wird fuer Temperatur gebraucht, GAPs muessen danach sein
+:209 = 4898
+
+** Hilfsknoten
+joint coordinates
+20001  x  0.  y   8.112    * GOK bei WL i.M.
+20002  x  0.  y -99.
+
+$
+************************************************************************
+*                                                                      *
+*           S k e w    C o o r d i n a t e    S y s t e m s            *
+*                                                                      *
+************************************************************************
+
+Skew system   1                                                                &
+                0.00000000E+00   0.00000000E+00   0.00000000E+00               &
+                0.10000000E+01   0.00000000E+00   0.00000000E+00               &
+                0.00000000E+00   0.00000000E+00   0.10000000E+01
+
+$
+************************************************************************
+*                                                                      *
+*                    T r a c e    L i n e    d a t a                   *
+*                                                                      *
+************************************************************************
+
+Trace Line 1 "Fuge Schuettung links"
+    757       790       823       856       889            &
+   1279      1277      1275      1273      1271            &
+   1269      1267      1265      1916      1918            &
+   1920      1922      1924      1926      2108            &
+   2106      2104      2517      2515      2513            &
+   2511      2968      2970      3030                       
+
+
+Trace Line 2  "Fuge Fundament innen links"
+   1191      1214       909       708       710            &
+    712       734       748       750       752            &
+    754       756                                           
+
+
+Trace Line 3  "Fuge Fundament innen rechts"
+   1065      1067      1069      1071      1073            &
+   1059      1224      1226                                 
+
+
+Trace Line 4 "Fuge Schuettung rechts"
+   3028      2742      2740      2503      2505            &
+   2507      2509      2103      2044      1985            &
+   1758      1756      1754      1752      1750            &
+   1748      1521      1519      1517      1515            &
+   1513      1511      1509      1507       919            &
+    917       915       913       911                       
+
+
+$
+************************************************************************
+*                                                                      *
+*               M a t e r i a l     P r o p e r t i e s                *
+*                                                                      *
+************************************************************************
+
+include "../Grundlagen/Material"
+
+$
+************************************************************************
+*                                                                      *
+*                         C o n s t a n t e s                          *
+*                                                                      *
+************************************************************************
+
+Constantes
+part 01                         material 02  model 4            * Fundament 
+part 02                         material 02  model 4            * Stuetze
+part 11 16                      material 01  model 4            * Bogen
+part 21 22                      material 11  model 4            * Aufmauerung bis Scheitel (!weich!)
+part 23                         material 21  model 4            * Aufmauerung ober Scheitel (Erde)
+part 25 26                      material 21  model 4            * Schotterbett
+part 31 32 33 34 35 36 37 38    material 21  model 4            * Hinterfuellung
+part 44                         material 25  model 4            * Bestandsgelaende Kies steif
+part 41 42                      material 21  model 4            * Fuellung zwischen Fundamenten
+part 43                         Material 29  cs 59 59  acce 0.  * Stahlplatte
+part 10                         material 10  cs 51 51  acce 0.  * Bettung Fundament
+part 30 40                      material 10  cs 51 51  acce 0.  * OF Gelaende
+part 60                         material 10  cs 51 51  acce 0.  * OF Gewoelbe innen
+part 47 48 49 50                material 10  cs 51 51  acce 0.  * Bettung Gelaende
+* part 51 52 53 54 55 56 57       material 10  cs 51 51  acce 0.  * Bettung Gewoelbe
+part 61 62 63 64 65 66 67 68 69 material 31  model 2            * GAPs
+
+$
+************************************************************************
+*                                                                      *
+*               E l e m e n t       P r o p e r t i e s                *
+*                                                                      *
+************************************************************************
+
+Element Properties
+Part 10 47             msr 15000. 30000. 0. 0. 0. 0.  * Bettung Fundament
+Part 48 49 50          msr     0. 30000. 0. 0. 0. 0.  * Bettung Gelaende
+
+element properties
+:if :1 > 1 :goto b2
+:gen part 61 62 63 64 65 66 67 68 69   rm-midnode
+:goto be
+:lbl b2
+:if :1 <> 2 :goto be
+:gen * Bettung Widerlager
+:gen msr definition 1 node 20001 20002
+:gen     1 dist  0. data   0.      0.  0. 0. 0. 0.
+:gen     2 dist 10. data 200. 100000.  0. 0. 0. 0.
+:gen Element Properties
+:gen Part 51 52 53 54 55 56 57   msr 1
+:lbl be
+:end
+
+* oberste Elementreihe
+element Properties
+part 26 38  node 4
+Constantes
+part 26  part 25
+part 38  part 37
+part 69  part 68
+
+$
+************************************************************************
+*                                                                      *
+*           S t r u c t u r e   M o d i f i c a t i o n                *
+*                                                                      *
+************************************************************************
+
+** Oberstes Element nicht doppelt
+structure modification
+4748 4749 kill
+
+
+:if :5 <> 0 :goto m0
+:gen mesh generate
+:lbl m0
+:gen structure modification
+:gen part 101                   delete
+:if :1 <> 0 :goto m1
+:gen ** Model mit Gelaende
+:gen part 10                    kill  * Bettung Fundamente
+:gen part 47                    kill  * Bettung Schuettung
+* :gen part 51 52 53 54 55 56 57  kill  * Bettung Gewoelbe
+:gen part 60                    kill  * OF Gewoelbe innen
+:goto me
+:lbl m1
+:if :1 <> 1 :goto m2
+:gen ** Model Bettung unten / Gelaende seitlich
+:gen part 41                    kill  * Bestandsgelaende
+:gen part 49 50                 kill  * Bettung Bestandsgelaende
+* :gen part 51 52 53 54 55 56 57  kill  * Bettung Gewoelbe
+:gen part 60                    kill  * OF Gewoelbe innen
+:goto me
+:lbl m2
+:if :1 <> 2 :goto mf
+:gen ** Model Bettung
+:gen part 41 42                 kill  * Bestandsgelaende
+:gen part 47 48 49 50           kill  * Bettung Bestandsgelaende
+:gen part 32 33 34 35 36 37 40  kill  * Schuettung
+:gen part 61 62 63 64 65 66 67  kill  * GAPs
+:gen part 60                    kill  * OF Gewoelbe innen
+* :gen joint coincidence tolerance 0.001
+:goto me
+:lbl mf
+:gen stop
+:lbl me
+:end

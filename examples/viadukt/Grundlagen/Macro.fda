@@ -1,0 +1,31 @@
+** Angaben
+* :201  Construction stage, fortlaufende N.
+*       Wenn CS < 20 -> LF Aufbau
+
+:201 = :201 + 1
+:202 = :201 * 1000 + 1
+
+:if :201 <> 1 :goto r1
+:gen equation optimize 0
+:lbl r1
+:gen strfile minimum delete
+* :gen print structure
+:gen form
+:gen print load short
+:gen startloop 60
+:gen   matrix
+:gen   nonlinear solution type 1 tole 1.0e-9
+:gen next
+:if :201 > 23 :goto r2
+:if :2 <> 0 :goto re
+:if :3 <> 0 :goto re
+:if :201 > 20 :goto r2
+:if :4 <> 0 :goto re
+:lbl r2
+:gen  plot displacements          load  1 file :202 prefix "dis"
+:gen  define data stress mid s-xx load  1 file :202 prefix "str"
+:gen  plot msr                    load  1 file :202 prefix "msr"
+:gen  define data gap             load  1 file :202 prefix "gap"
+:lbl re
+:gen end
+:end

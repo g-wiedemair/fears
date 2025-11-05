@@ -1,0 +1,91 @@
+Feap
+Pardiso
+type  Field
+*
+* meter (newton)
+*
+Units  1 1.00000000E+00 1.00000000E+00 1.00000000E+00 2.73150000E+02
+
+Title 9780 OEBB_St.Valentin-Tarvis - 01_DerntlGraben_km_15_304 - Temperaturanalyse
+
+echo off
+include "V02_Nodes"
+include "T02_Constraints"
+include "V02_Elements"
+include "V02_Constantes"
+include "T02_Properties"
+echo on
+
+** Temperatur [K]
+* :51 = 5.0
+:if :51 <> 0 :goto la
+:gen stop
+:lbl la
+:end
+
+:1 = 2
+:if :51 > 3  :1 = 1
+:if :51 > 10 :1 = 0
+:9 = :1 * 10000
+:gen define filenumber :9
+:end
+
+** Max. Elementn.
+:209 = 5054
+
+Joint coordinates
+  100001    x   -15.       y   -15.        z    0.    * 0
+  100002    x    22.901    y     8.112     z    0.    * y, H
+  100003    x    22.901    y   -15.        z    0.    * x
+  100004    x     0.       y   -15.        z  100.
+
+$
+************************************************************************
+*                                                                      *
+*               M a t e r i a l     P r o p e r t i e s                *
+*                                                                      *
+************************************************************************
+
+include "../Grundlagen/T_Material"
+
+$
+************************************************************************
+*                                                                      *
+*                         C o n s t a n t e s                          *
+*                                                                      *
+************************************************************************
+
+Constantes
+part 01                         material 03  model 101     * Fundament 
+part 02                         material 03  model 101     * Kaempfer
+part 11 16                      material 03  model 101     * Bogen
+part 21 22                      material 03  model 101     * Aufmauerung bis Scheitel
+part 23                         material 03  model 101     * Aufmauerung ober Scheitel
+part 25 26                      material 02  model 101     * Schotterbett
+part 31 32 33 34 35 36 37 38    material 02  model 101     * Hinterfuellung
+part 41 42 43                   material 02  model 101     * Boden innen
+part 44                         material 01  model 101     * Bestandsgelaende
+part 10                         material 03  model 101     * Bettung Fundament
+part 30 40                      material 21  model 101     * OF Gelaende
+part 60                         material 21  model 101     * OF Gewoelbe innen
+part 47 48 49 50                material 21  model 101     * Bettung Gelaende
+* part 51 52 53 54 55 56 57       material 21  model 101     * Bettung Gewoelbe
+part 61 62 63 64 65 66 67 68 69 material 21  model 101     * GAPs
+part 101                        material 21  model 101     * Ko
+
+structure modification
+part 10                          kill  * Bettung Fundamente
+part 47                          kill  * Bettung Schuettung
+* part 51 52 53 54 55 56 57        kill  * Bettung Gewoelbe
+part 61 62 63 64 65 66 67 68 69  kill  * GAPs
+part 101                         kill  * Ko
+
+************************************************************************
+*                                                                      *
+*                          B e l a s t u n g                           *
+*                                                                      *
+************************************************************************
+
+include "../Grundlagen/T_Load_0"
+include "../Grundlagen/T_Load_1"
+include "../Grundlagen/T_Macro"
