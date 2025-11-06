@@ -5,4 +5,5 @@ set(SRC
 )
 
 add_executable(feap ${SRC})
-target_link_libraries(feap fecore)
+target_link_libraries(feap core fecore)
+setup_platform_linker_flags(feap)

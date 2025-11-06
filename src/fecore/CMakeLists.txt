@@ -1,6 +1,7 @@
 set(SRC
+        fecore_api.hpp
         FeKernel.hpp
         FeKernel.cpp
 )
 
-add_library(fecore SHARED ${SRC})
+add_library(fecore ${SRC})

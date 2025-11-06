@@ -1,6 +1,22 @@
 #include "FeapApp.hpp"
 
+#include "core/memory.hpp"
+#include "core/string.hpp"
+#include <cstdio>
+
 int main(int argc, char **argv) {
+  // Guarded allocator
+  {
+    for (int i = 1; i < argc; ++i) {
+      if (STR_ELEM(argv[i], "-d", "--debug", "--debug-memory", "--debug-all")) {
+        printf("Switching to fully guarded memory allocator.\n");
+        mem_use_guarded_allocator();
+        break;
+      }
+    }
+    mem_init_memleak_detection();
+  }
+
   // create the feap app
   FeapApp app;
 
@@ -10,5 +26,7 @@ int main(int argc, char **argv) {
 
   // TODO:
 
-  return 1;
+  app.finish();
+
+  return 0;
 }

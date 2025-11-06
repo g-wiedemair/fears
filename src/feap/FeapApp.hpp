@@ -5,13 +5,14 @@
 #pragma once
 
 class FeapApp {
-private:
-public:
+ private:
+ public:
   FeapApp();
 
   bool init(int argc, char **argv);
+  void finish();
 
-public:
+ public:
   FeapApp(const FeapApp &) = delete;
   FeapApp &operator=(const FeapApp &) = delete;
 };

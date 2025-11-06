@@ -1,15 +1,22 @@
 #pragma once
 
-class FeKernel {
-private:
+#include "fecore_api.hpp"
+
+class FECORE_API FeKernel {
+ private:
   static FeKernel *_instance;
 
-public:
-  FeKernel &get_instance();
+ public:
+  static FeKernel &get_instance();
+
+  static void init();
+  static void shutdown();
 
   FeKernel(const FeKernel &) = delete;
   FeKernel &operator=(const FeKernel &) = delete;
 
-private:
   FeKernel();
+
+ private:
+  template<typename T, typename... Args> friend T *mem_new(const char *, Args &&...);
 };

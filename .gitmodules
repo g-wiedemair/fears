@@ -1,0 +1,3 @@
+[submodule "lib/lib-windows_x64"]
+	path = lib/lib-windows_x64
+	url = https://github.com/g-wiedemair/lib-windows_x64

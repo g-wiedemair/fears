@@ -37,8 +37,28 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin CACHE INTERNAL "" FORCE)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib CACHE INTERNAL "" FORCE)
 
 # -----------------------------------------------------------------------------
+# Set policy
+
+# So library linking is more sane
+cmake_policy(SET CMP0003 NEW)
+# So syntax problems are errors
+cmake_policy(SET CMP0010 NEW)
+
+# -----------------------------------------------------------------------------
+# Load macros
+
+include(../build_files/cmake/macros.cmake)
+
+# -----------------------------------------------------------------------------
 # Options
 
+# Memory
+option(WITH_ASSERT_ABORT "Call abort() when raising an assertion through assert()" ON)
+mark_as_advanced(WITH_ASSERT_ABORT)
+
+if (WITH_ASSERT_ABORT)
+    add_definitions(-DWITH_ASSERT_ABORT)
+endif ()
 
 # -----------------------------------------------------------------------------
 # Platform
@@ -53,5 +73,6 @@ endif ()
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-#add_subdirectory(core)
+add_subdirectory(core)
+add_subdirectory(fecore)
 add_subdirectory(feap)
