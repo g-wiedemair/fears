@@ -1,0 +1,15 @@
+#pragma once
+
+// Feap major version
+#define FEAP_VERSION_MAJOR @FEAP_VERSION_MAJOR@
+// Feap minor version
+#define FEAP_VERSION_MINOR @FEAP_VERSION_MINOR@
+// Feap path version for bug-fix releases
+#define FEAP_VERSION_PATCH @FEAP_VERSION_PATCH@
+// Feap release cycle stage: alpha/beta/rc/release
+#define FEAP_VERSION_CYCLE @FEAP_VERSION_CYCLE@
+// Feap release type suffix: LTS or blank
+#define FEAP_VERSION_SUFFIX @FEAP_VERSION_SUFFIX@
+
+// User readable version string
+const char* feap_version_string();

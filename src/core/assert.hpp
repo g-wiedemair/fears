@@ -37,7 +37,9 @@ void assert_unreachable_print(const char *file, int line, const char *function);
                       ASSERT_ABORT(), \
                       NULL)) : \
                     NULL)
-
+#else
+#  define fassert(a) ((void)0)
+#  define fassert_msg(a, msg) ((void)0)
 #endif
 
 /**

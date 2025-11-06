@@ -10,9 +10,12 @@ add_definitions(
         -D_CRT_NONSTDC_NO_DEPRECATE
         -D_CRT_SECURE_NO_DEPRECATE
         -D_SCL_SECURE_NO_DEPRECATE
-        -D_CONSOLE
-        -D_LIB
+        -DNOMINMAX
 )
+
+# Needed, otherwise system encoding causes utf-8 encoding to fail in some cases (C4819)
+add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 string(APPEND CMAKE_Fortran_FLAGS_DEBUG " /Z7 /debug:full")
 
@@ -32,33 +35,9 @@ string(APPEND PLATFORM_LINKFLAGS " /SUBSYSTEM:CONSOLE /STACK:2097152")
 string(APPEND PLATFORM_LINKFLAGS_RELEASE " ${PLATFORM_LINKFLAGS} /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib")
 string(APPEND PLATFORM_LINKFLAGS_DEBUG " ${PLATFORM_LINKFLAGS} /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrt.lib")
 
-
-if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    set(_WARNINGS
-            "/W3"
-            # disable:
-            "/wd4018"  # signed/unsigned mismatch
-            "/wd4200"  # zero-sized array in struct/union
-            "/wd4244"  # conversion from 'type1' to 'type2'
-            "/wd4267"  # conversion from 'size_t' to 'type', possible loss of data
-            "/wd4353"  # constant 0 as function expression
-            "/wd4848"  # 'no_unique_address' is a vendor extension in C++17
-            # errors:
-            "/we4431"  # missing type specifier - int assumed
-    )
-
-    string(REPLACE ";" " " _WARNINGS "${_WARNINGS}")
-    set(C_WARNINGS "${_WARNINGS}")
-    set(CXX_WARNINGS "${_WARNINGS}")
-    unset(_WARNINGS)
-endif ()
-
-# Include warnings first, so its possible to disable them with user defined flags
-# eg: -Wno-uninitialized
-set(CMAKE_C_FLAGS "${C_WARNINGS} ${CMAKE_C_FLAGS} ${PLATFORM_CFLAGS}")
-set(CMAKE_CXX_FLAGS "${CXX_WARNINGS} ${CMAKE_CXX_FLAGS} ${PLATFORM_CXXFLAGS}")
-
 #-----------------------------------------------------------------------------------------------------------------------
+# Libraries
+
 if (NOT DEFINED LIBDIR)
     if (CMAKE_CL_64)
         if (CMAKE_SYSTEMPROCESSOR STREQUAL "ARM64")
@@ -88,6 +67,27 @@ set(PTHREADS_LIBRARIES ${LIBDIR}/pthreads/lib/pthreadVC3.lib)
 # used in many places so include globally, like OpenGL
 include_directories(SYSTEM "${PTHREADS_INCLUDE_DIRS}")
 
+if (WITH_TBB)
+    if (EXISTS ${LIBDIR}/tbb/lib/tbb12.lib) # 4.4
+        set(TBB_LIBRARIES
+                optimized ${LIBDIR}/tbb/lib/tbb12.lib
+                debug ${LIBDIR}/tbb/lib/tbb12_debug.lib
+        )
+        set(TBB_INCLUDE_DIRS ${LIBDIR}/tbb/include)
+        if (WITH_TBB_MALLOC_PROXY)
+            set(TBB_MALLOC_LIBRARIES
+                    optimized ${LIBDIR}/tbb/lib/tbbmalloc.lib
+                    debug ${LIBDIR}/tbb/lib/tbbmalloc_debug.lib
+            )
+            add_definitions(-DWITH_TBB_MALLOC)
+        endif ()
+    else ()
+        message(WARNING "TBB library not found. Setting WITH_TBB to OFF")
+        set(WITH_TBB OFF)
+        set(WITH_TBB_MALLOC_PROXY OFF)
+    endif ()
+endif ()
+
 list(APPEND PLATFORM_LINKLIBS
-        ws2_32 version Dbghelp Shlwapi
+        version Dbghelp Shlwapi
 )

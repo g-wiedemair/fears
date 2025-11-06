@@ -3,6 +3,10 @@
 #include <mutex>
 
 #ifdef WITH_TBB
+#  include <tbb/mutex.h>
+#endif
+
+#ifdef WITH_TBB
 
 /**
  * Mutex should be used as the default mutex in feap. It implements a subset of the API

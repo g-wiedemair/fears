@@ -26,5 +26,15 @@ if (WIN32)
 endif ()
 
 add_library(core SHARED ${SRC})
-target_link_libraries(core ${PTHREADS_LIBRARIES} ${PLATFORM_LINKLIBS})
+target_link_libraries(core ${PTHREADS_LIBRARIES} ${TBB_LIBRARIES} ${PLATFORM_LINKLIBS})
+include_directories(SYSTEM ${TBB_INCLUDE_DIRS})
 setup_platform_linker_flags(core)
+
+if (WITH_TBB)
+    add_custom_command(TARGET core POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<$<CONFIG:Debug>:"${LIBDIR}/tbb/bin/tbb12_debug.dll">
+            $<$<CONFIG:Release>:"${LIBDIR}/tbb/bin/tbb12.dll">
+            "$<TARGET_FILE_DIR:core>"
+    )
+endif ()
