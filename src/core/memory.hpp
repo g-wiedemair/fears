@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/core_api.hpp"
+
 #include <new>
 
 #include "core/intern/memory_function_pointers.hpp"
@@ -17,14 +19,14 @@
  * Release memory previously allocated by the C-style functions of this module
  * It is illegal to call this function with data allocated by #mem_new
  */
-void mem_free(void *vmemh);
+CORE_API void mem_free(void *vmemh);
 
 /**
  * Allocate a block of memory of size len, with tag name str. The
  * memory is cleared. The name must be static, because only a
  * pointer to it is stored!
  */
-void *mem_calloc(size_t len, const char *str);
+CORE_API void *mem_calloc(size_t len, const char *str);
 
 //-------------------------------------------------------------------------------------------------
 
@@ -41,7 +43,7 @@ extern uint32_t (*mem_get_memory_blocks_in_use)();
  * This should be called as early as possible in the program. When it has been called, information
  * about memory leaks will be printed on exit.
  */
-void mem_init_memleak_detection();
+CORE_API void mem_init_memleak_detection();
 
 /**
  * Switch allocator to slow fully guarded mode.
@@ -52,7 +54,7 @@ void mem_init_memleak_detection();
  *
  * \note The switch between allocator types can only happen before any allocation did happen.
  */
-void mem_use_guarded_allocator();
+CORE_API void mem_use_guarded_allocator();
 
 //-------------------------------------------------------------------------------------------------
 

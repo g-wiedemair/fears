@@ -4,4 +4,6 @@ set(SRC
         FeKernel.cpp
 )
 
-add_library(fecore ${SRC})
+add_library(fecore SHARED ${SRC})
+target_link_libraries(fecore core)
+setup_platform_linker_flags(fecore)

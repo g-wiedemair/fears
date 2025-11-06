@@ -1,10 +1,9 @@
 #include "memory_function_pointers.hpp"
 
-#include "core/assert.hpp"
-#include "core/core_api.hpp"
+#include "core/memory.hpp"
 #include "memory_alloc_intern.hpp"
 
-#include <assert.h>
+#include <cassert>
 
 #ifdef WIN32
 #  include <corecrt_malloc.h>

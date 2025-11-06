@@ -25,6 +25,6 @@ if (WIN32)
     )
 endif ()
 
-add_library(core ${SRC})
+add_library(core SHARED ${SRC})
 target_link_libraries(core ${PTHREADS_LIBRARIES} ${PLATFORM_LINKLIBS})
 setup_platform_linker_flags(core)

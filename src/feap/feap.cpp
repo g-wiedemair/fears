@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
 
   // TODO:
 
+  // cleanup
   app.finish();
 
   return 0;

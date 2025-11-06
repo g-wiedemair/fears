@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/core_api.hpp"
+
 #include <any>
 
 namespace internal {
@@ -12,16 +14,16 @@ enum class AllocationType {
 };
 
 /** Internal implementation of mem_free */
-extern void (*mem_free)(void *mem, AllocationType allocation_type);
+extern CORE_API void (*mem_free)(void *mem, AllocationType allocation_type);
 
 /** Internal implementation of mem_malloc_aligned */
-extern void *(*mem_malloc_aligned)(size_t len,
-                                   size_t alignment,
-                                   const char *str,
-                                   AllocationType allocation_type);
+extern CORE_API void *(*mem_malloc_aligned)(size_t len,
+                                            size_t alignment,
+                                            const char *str,
+                                            AllocationType allocation_type);
 
 /** Internal implementation of mem_calloc */
-extern void *(*mem_calloc)(size_t len, const char *str);
+extern CORE_API void *(*mem_calloc)(size_t len, const char *str);
 
 /**
  * Store a std::any into a static opaque storage vector. The only purpose of this call is to

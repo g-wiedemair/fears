@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 # Platform flags
 
-add_definitions(-DWIN32)
+add_definitions(-DWIN32 -DFEAP_DLL)
 if (CMAKE_CL_64)
     add_definitions(-DWIN64)
 endif ()
