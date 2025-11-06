@@ -1,5 +1,14 @@
 set(SRC
         fecore_api.hpp
+        version.cpp
+        utils.cpp
+        utils.hpp
+        CmdOptions.cpp
+        CmdOptions.hpp
+        LogStream.cpp
+        LogStream.hpp
+        Console.cpp
+        Console.hpp
         FeKernel.hpp
         FeKernel.cpp
 )

@@ -12,7 +12,7 @@ endif ()
 # ----------------------------------------------------------------------------------------------------------------------
 # Initialize project
 
-project(fenda
+project(Feap
         VERSION 0.1.0
 )
 set(FEAP_VERSION_CYCLE "alpha")
@@ -192,7 +192,9 @@ endif ()
 # ----------------------------------------------------------------------------------------------------------------------
 
 include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_BINARY_DIR})
 
 add_subdirectory(core)
 add_subdirectory(fecore)
+add_subdirectory(fenda)
 add_subdirectory(feap)

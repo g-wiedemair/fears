@@ -2,6 +2,18 @@
 
 #include "memory_function_pointers.hpp"
 
+#undef HAVE_MALLOC_STATS
+
+#if defined(HAVE_MALLOC_STATS_H)
+#  include <malloc.h>
+#  define HAVE_MALLOC_STATS
+#elif defined(WIN32)
+#  include <malloc.h>
+#else
+#  pragma message "We don't know how to use malloc_usable_size on your platform
+#  undef USE_MALLOC_USABLE_SIZE
+#endif
+
 #define ALIGNED_ALLOC_MINIMUM_ALIGNMENT sizeof(void *)
 
 /* Exgtra padding which needs to be applied on MemHead to make it aligned */

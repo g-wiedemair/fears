@@ -27,4 +27,4 @@ typedef double f64;
 #endif
 
 /* These values need to be hard-coded in structs */
-#define FILE_MAX 1024
+#define FILE_MAX 512

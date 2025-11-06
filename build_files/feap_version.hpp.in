@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fecore/fecore_api.hpp"
+
 // Feap major version
 #define FEAP_VERSION_MAJOR @FEAP_VERSION_MAJOR@
 // Feap minor version
@@ -12,4 +14,7 @@
 #define FEAP_VERSION_SUFFIX @FEAP_VERSION_SUFFIX@
 
 // User readable version string
-const char* feap_version_string();
+FECORE_API const char* feap_version_string();
+
+// Returns true when version suffix is LTS
+FECORE_API bool feap_version_is_lts();

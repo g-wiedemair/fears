@@ -5,10 +5,6 @@
 
 #include <cassert>
 
-#ifdef WIN32
-#  include <corecrt_malloc.h>
-#endif
-
 void (*internal::mem_free)(void *mem, internal::AllocationType allocationType) = mem_lockfree_free;
 void *(*internal::mem_malloc_aligned)(size_t len,
                                       size_t alignment,

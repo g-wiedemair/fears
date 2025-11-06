@@ -1,14 +1,16 @@
 #pragma once
 
+#include "core/core_api.hpp"
+
 #include <cstddef>
 
 /* Utility functions */
 
-void assert_print_pos(const char *file, int line, const char *function, const char *id);
-void assert_print_extra(const char *str);
-void assert_print_backtrace();
-void assert_abort();
-void assert_unreachable_print(const char *file, int line, const char *function);
+CORE_API void assert_print_pos(const char *file, int line, const char *function, const char *id);
+CORE_API void assert_print_extra(const char *str);
+CORE_API void assert_print_backtrace();
+CORE_API void assert_abort();
+CORE_API void assert_unreachable_print(const char *file, int line, const char *function);
 
 //-------------------------------------------------------------------------------------------------
 // Macros

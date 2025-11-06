@@ -1,8 +1,14 @@
 #pragma once
 
+#include "core/core_api.hpp"
 #include "core/defines_variadic.hpp"
 #include <cstdarg>
 #include <cstring>
+
+#define STRINGIFY_APPEND(a, b) "" a #b
+#define STRINGIFY(x) STRINGIFY_APPEND("", x)
+
+#define STREQ(a, b) (strcmp(a, b) == 0)
 
 /**
  * String debugging
@@ -20,15 +26,18 @@ TODO;
 /**
  * Portable replacement for `snprintf`.
  */
-size_t fsnprintf(char *__restrict dst, size_t dst_maxncpy, const char *__restrict format, ...);
+CORE_API size_t fsnprintf(char *__restrict dst,
+                          size_t dst_maxncpy,
+                          const char *__restrict format,
+                          ...);
 
 /**
  * Portable replacement for `vsnprintf`.
  */
-size_t fvsnprintf(char *__restrict dst,
-                  size_t dst_maxncpy,
-                  const char *__restrict format,
-                  va_list arg);
+CORE_API size_t fvsnprintf(char *__restrict dst,
+                           size_t dst_maxncpy,
+                           const char *__restrict format,
+                           va_list arg);
 
 //-------------------------------------------------------------------------------------------------
 
