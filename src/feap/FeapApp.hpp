@@ -3,11 +3,16 @@
 //
 
 #pragma once
+
 #include "fecore/CmdOptions.hpp"
+#include "fenda/FeapConfig.hpp"
 
 class FeapApp {
  private:
-  CmdOptions _ops;  // command line options
+  CmdOptions _ops;     // command line options
+  FeapConfig _config;  // configuration options
+                       //
+                       // FeapModel *_fem;     // current model
 
  public:
   FeapApp();

@@ -2,6 +2,9 @@ set(SRC
         fenda_api.hpp
         fenda.hpp
         hello.cpp
+        fenda.cpp
+        FeapConfig.cpp
+        FeapConfig.hpp
 )
 
 add_library(fenda SHARED ${SRC})

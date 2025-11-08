@@ -10,6 +10,7 @@ set(SRC
         string.hpp
         string.cpp
         memory.hpp
+        intern/memory_inline.hpp
         intern/memory_function_pointers.hpp
         intern/memory_alloc_intern.hpp
         intern/memory_alloc.cpp

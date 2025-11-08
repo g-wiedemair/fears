@@ -1,8 +1,10 @@
 #include "memory_alloc_intern.hpp"
 
 #include "core/assert.hpp"
+#include "core/intern/memory_inline.hpp"
 #include "core/memory.hpp"
 #include "core/sys_types.hpp"
+
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
@@ -133,6 +135,39 @@ void mem_lockfree_free(void *mem, internal::AllocationType allocation_type) {
   }
 }
 
+void *mem_lockfree_malloc(size_t len, const char *str) {
+  MemHead *memh;
+
+#ifdef WITH_MEM_VALGRIND
+  TODO;
+#endif
+  len = SIZET_ALIGN_4(len);
+
+  memh = (MemHead *)malloc(len + sizeof(MemHead));
+
+  if (LIKELY(memh)) {
+    if (LIKELY(len)) {
+      if (UNLIKELY(alloc_debug_memset)) {
+        memset(memh + 1, 255, len);
+      }
+#ifdef WITH_MEM_VALGRIND
+      TODO;
+#endif
+    }
+
+    memh->len = len;
+    memory_usage_block_alloc(len);
+
+    return PTR_FROM_MEMHEAD(memh);
+  }
+
+  print_error("Malloc returns null: len=" SIZET_FORMAT " in %s, total " SIZET_FORMAT "\n",
+              SIZET_ARG(len),
+              str,
+              memory_usage_current());
+  return nullptr;
+}
+
 void *mem_lockfree_malloc_aligned(size_t len,
                                   size_t alignment,
                                   const char *str,
@@ -205,6 +240,36 @@ void *mem_lockfree_calloc(size_t len, const char *str) {
               SIZET_ARG(len),
               str,
               memory_usage_current());
+  return nullptr;
+}
+
+void *mem_lockfree_calloc_array(size_t len, size_t size, const char *str) {
+  size_t total_size;
+  if (UNLIKELY(!mem_size_safe_multiply(len, size, &total_size))) {
+    print_error(
+        "Calloc array aborted due to integer overflow: "
+        "len=" SIZET_FORMAT "x" SIZET_FORMAT " in %s, total " SIZET_FORMAT "\n",
+        SIZET_ARG(len),
+        SIZET_ARG(size),
+        str,
+        memory_usage_current());
+    abort();
+    return nullptr;
+  }
+
+  return mem_lockfree_calloc(total_size, str);
+}
+
+void *mem_lockfree_calloc_array_aligned(size_t len,
+                                        size_t size,
+                                        size_t alignment,
+                                        const char *str) {
+  // There is no lower level calloc with an alignment parameter
+  if (alignment <= MEM_MIN_CPP_ALIGNMENT) {
+    return mem_lockfree_calloc_array(len, size, str);
+  }
+
+  todo();
   return nullptr;
 }
 

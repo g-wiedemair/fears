@@ -5,6 +5,8 @@ set(SRC
         utils.hpp
         CmdOptions.cpp
         CmdOptions.hpp
+        log.cpp
+        log.hpp
         LogStream.cpp
         LogStream.hpp
         Console.cpp

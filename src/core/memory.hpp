@@ -22,11 +22,25 @@
 CORE_API void mem_free(void *vmemh);
 
 /**
+ * Allocate a block of memory of size len, with tag name str.
+ * The name must be a static, because only a pointer to it is stored
+ */
+extern CORE_API void *(*mem_malloc)(size_t len, const char *str);
+
+/**
  * Allocate a block of memory of size len, with tag name str. The
  * memory is cleared. The name must be static, because only a
  * pointer to it is stored!
  */
 CORE_API void *mem_calloc(size_t len, const char *str);
+
+/**
+ * Allocate an aligned block of memory that is initialized with zeros
+ */
+extern CORE_API void *(*mem_calloc_array_aligned)(size_t len,
+                                                  size_t size,
+                                                  size_t alignment,
+                                                  const char *str);
 
 //-------------------------------------------------------------------------------------------------
 
@@ -57,6 +71,21 @@ CORE_API void mem_init_memleak_detection();
 CORE_API void mem_use_guarded_allocator();
 
 //-------------------------------------------------------------------------------------------------
+
+/**
+ * Allocate zero-initialized memory for an object of type T. The constructor of T is not called,
+ * therefore this must only be used with trivial types
+ */
+template<typename T> inline T *mem_calloc(const char *allocation_name) {
+#ifdef _MSC_VER
+  static_assert(std::is_trivially_constructible_v<T>,
+                "For non-trivial types, mem_new must be used.");
+#else
+  static_assert(std::is_trivial_v<T>, "For non-trivial types, mem_new must be used.");
+#endif
+
+  return static_cast<T *>(mem_calloc_array_aligned(1, sizeof(T), alignof(T), allocation_name));
+}
 
 /**
  * Allocate new memory for an object of type T, and construct it.

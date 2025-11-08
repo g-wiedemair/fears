@@ -4,8 +4,10 @@
 
 class LogStream;
 
-namespace feap {
+namespace fenda {
 
 FENDA_API void say_hello(LogStream &log);
 
-}
+FENDA_API void init_library();
+
+}  // namespace fenda

@@ -64,11 +64,17 @@ extern void (*mem_clear_memlist)();
  */
 
 void mem_lockfree_free(void *mem, internal::AllocationType allocation_type);
+void *mem_lockfree_malloc(size_t len, const char *str);
 void *mem_lockfree_malloc_aligned(size_t len,
                                   size_t alignment,
                                   const char *str,
                                   internal::AllocationType allocation_type);
 void *mem_lockfree_calloc(size_t len, const char *str);
+void *mem_lockfree_calloc_array(size_t len, size_t size, const char *str);
+void *mem_lockfree_calloc_array_aligned(size_t len,
+                                        size_t size,
+                                        size_t alignment,
+                                        const char *str);
 
 void mem_lockfree_print_memlist();
 void mem_lockfree_set_error_callback(void (*func)(const char *));
@@ -84,11 +90,13 @@ void mem_lockfree_clear_memlist();
  */
 
 void mem_guarded_free(void *mem, internal::AllocationType allocation_type);
+void *mem_guarded_malloc(size_t len, const char *str);
 void *mem_guarded_malloc_aligned(size_t len,
                                  size_t alignment,
                                  const char *str,
                                  internal::AllocationType allocation_type);
 void *mem_guarded_calloc(size_t len, const char *str);
+void *mem_guarded_calloc_array_aligned(size_t len, size_t size, size_t alignment, const char *str);
 
 void mem_guarded_print_memlist();
 void mem_guarded_set_error_callback(void (*func)(const char *));

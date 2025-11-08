@@ -2,6 +2,7 @@
 
 #include "core/assert.hpp"
 #include "core/atomic_ops_ext.hpp"
+#include "core/intern/memory_inline.hpp"
 #include "core/memory.hpp"
 #include "core/sys_types.hpp"
 
@@ -424,6 +425,41 @@ void mem_guarded_free(void *mem, internal::AllocationType allocation_type) {
   tot_block--;
 }
 
+void *mem_guarded_malloc(size_t len, const char *str) {
+  MemHead *memh;
+
+#ifdef WITH_MEM_VALGRIND
+  TODO;
+#endif
+  len = SIZET_ALIGN_4(len);
+
+  memh = (MemHead *)malloc(len + sizeof(MemHead) + sizeof(MemTail));
+
+  if (LIKELY(memh)) {
+    make_memhead_header(memh, len, str, internal::AllocationType::ALLOC_FREE);
+
+    if (LIKELY(len)) {
+      if (UNLIKELY(malloc_debug_memset)) {
+        memset(memh + 1, 255, len);
+      }
+#ifdef WITH_MEM_VALGRIND
+      TODO;
+#endif
+    }
+
+#ifdef DEBUG_MEMCOUNTER
+    TODO;
+#endif
+    return (++memh);
+  }
+
+  print_error("Malloc returns null: len=" SIZET_FORMAT " in %s, total " SIZET_FORMAT "\n",
+              SIZET_ARG(len),
+              str,
+              mem_in_use);
+  return nullptr;
+}
+
 void *mem_guarded_malloc_aligned(size_t len,
                                  size_t alignment,
                                  const char *str,
@@ -477,6 +513,29 @@ void *mem_guarded_malloc_aligned(size_t len,
   return nullptr;
 }
 
+static void *mem_guarded_malloc_array_aligned(
+    size_t len, size_t size, size_t alignment, const char *str, size_t &r_bytes_num) {
+  if (UNLIKELY(!mem_size_safe_multiply(len, size, &r_bytes_num))) {
+    print_error(
+        "Calloc array aborted due to integer overflow: "
+        "len=" SIZET_FORMAT "x" SIZET_FORMAT " in %s, total " SIZET_FORMAT "\n",
+        SIZET_ARG(len),
+        SIZET_ARG(size),
+        str,
+        mem_in_use);
+    abort();
+    return nullptr;
+  }
+
+  if (alignment <= MEM_MIN_CPP_ALIGNMENT) {
+    return mem_malloc(r_bytes_num, str);
+  }
+
+  todo();
+  return nullptr;
+  // return mem_malloc_aligned(r_bytes_num, alignment, str);
+}
+
 void *mem_guarded_calloc(size_t len, const char *str) {
   MemHead *memh;
   len = SIZET_ALIGN_4(len);
@@ -495,6 +554,21 @@ void *mem_guarded_calloc(size_t len, const char *str) {
               str,
               mem_in_use);
   return nullptr;
+}
+
+void *mem_guarded_calloc_array_aligned(size_t len,
+                                       size_t size,
+                                       size_t alignment,
+                                       const char *str) {
+  size_t bytes_num;
+  // There is no lower level calloc with an alignment parameter
+  void *ptr = mem_guarded_malloc_array_aligned(len, size, alignment, str, bytes_num);
+  if (!ptr) {
+    return nullptr;
+  }
+
+  memset(ptr, 0, bytes_num);
+  return ptr;
 }
 
 static const char mem_printmemlist_pydict_script[] =

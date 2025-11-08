@@ -4,7 +4,7 @@
 #include "fecore/LogStream.hpp"
 #include "fecore/feap_version.hpp"
 
-void feap::say_hello(LogStream &log) {
+void fenda::say_hello(LogStream &log) {
   char version[128] = {0};
   const char *version_string = feap_version_string();
   fsnprintf(version, sizeof(version), "  version %s\n", version_string);

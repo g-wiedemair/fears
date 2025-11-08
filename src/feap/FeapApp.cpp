@@ -4,8 +4,13 @@
 #include "core/sys_types.hpp"
 #include "fecore/Console.hpp"
 #include "fecore/FeKernel.hpp"
+#include "fecore/Log.hpp"
 #include "fecore/utils.hpp"
 #include "fenda/fenda.hpp"
+
+#include <cstdio>
+
+static LogRef LOG = {"feap.app"};
 
 FeapApp::FeapApp() {}
 
@@ -20,7 +25,18 @@ bool FeapApp::init(int argc, char **argv) {
   // say hello
   ConsoleStream s;
   if (_ops.bsplash && !_ops.bsilent) {
-    feap::say_hello(s);
+    fenda::say_hello(s);
+  }
+
+  LOG_TRACE(&LOG, "Initializing fenda library");
+  fenda::init_library();
+
+  // read the configuration file if specified
+  if (_ops.config_filename[0]) {
+    // if (fenda::configure(_ops.config_filename, _config) == false) {
+    //   fprintf(stderr, "FATAL ERROR: An error occurred reading the configuration file.\n");
+    //   return false;
+    // }
   }
 
   return true;

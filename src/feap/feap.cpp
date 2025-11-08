@@ -2,6 +2,8 @@
 
 #include "core/memory.hpp"
 #include "core/string.hpp"
+#include "fecore/Log.hpp"
+
 #include <cstdio>
 
 int main(int argc, char **argv) {
@@ -17,6 +19,9 @@ int main(int argc, char **argv) {
     mem_init_memleak_detection();
   }
 
+  // Initialize logging
+  Log::init();
+
   // create the feap app
   FeapApp app;
 
@@ -28,6 +33,8 @@ int main(int argc, char **argv) {
 
   // cleanup
   app.finish();
+
+  Log::exit();
 
   return 0;
 }
