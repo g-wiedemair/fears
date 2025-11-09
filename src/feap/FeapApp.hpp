@@ -1,7 +1,3 @@
-//
-// Created by wig on 05.11.2025.
-//
-
 #pragma once
 
 #include "fecore/CmdOptions.hpp"

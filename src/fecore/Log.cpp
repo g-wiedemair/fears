@@ -1,10 +1,15 @@
 #include "Log.hpp"
 
 #include "core/assert.hpp"
+#include "core/atomic_ops_ext.hpp"
 #include "core/memory.hpp"
 
 #include <cassert>
 #include <mutex>
+
+#if WITH_LOG_PTHREADS
+#  include "pthread.h"
+#endif
 
 #if defined(_MSC_VER)
 #  ifndef NOMINMAX
@@ -37,7 +42,7 @@ struct LogContext {
   // Single linked list of references
   LogRef *refs;
 #ifdef WITH_LOG_PTHREADS
-  TODO;
+  pthread_mutex_t types_lock;
 #endif
 
   // exclude, include filters
@@ -134,6 +139,18 @@ static const char *log_level_as_text(LogLevel level) {
   return "INVLAID_LEVEL";
 }
 
+static uint64_t timestamp_ticks_get() {
+  uint64_t tick;
+#if defined(_MSC_VER)
+  tick = GetTickCount64();
+#else
+  struct timeval tv;
+  gettimeofday(&tv, nullptr);
+  tick = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+#endif
+  return tick;
+}
+
 #ifdef _WIN32
 static DWORD log_previous_console_mode = 0;
 #endif
@@ -156,10 +173,33 @@ static void ctx_output_set(LogContext *ctx, void *file_handle) {
 #endif
 }
 
+static void ctx_output_use_timestamp(LogContext *ctx, bool set) {
+  ctx->use_timestamp = set;
+  if (ctx->use_timestamp) {
+    ctx->timestamp_tick_start = timestamp_ticks_get();
+  }
+}
+
+static void ctx_output_use_memory(LogContext *ctx, bool set) {
+  ctx->use_memory = set;
+}
+
+static void ctx_output_use_source(LogContext *ctx, bool set) {
+  ctx->use_source = set;
+}
+
+static void ctx_output_use_basename(LogContext *ctx, bool set) {
+  ctx->use_basename = set;
+}
+
+static void ctx_fatal_fn_set(LogContext *ctx, void (*fatal_fn)(void *file_handle)) {
+  ctx->callbacks.fatal_fn = fatal_fn;
+}
+
 static LogContext *ctx_init() {
   LogContext *ctx = mem_calloc<LogContext>(__func__);
 #ifdef WITH_LOG_PTHREADS
-  TODO;
+  pthread_mutex_init(&ctx->types_lock, nullptr);
 #endif
   ctx->default_type.level = LOG_LEVEL_WARN;
   ctx->use_source = true;
@@ -192,7 +232,7 @@ static void ctx_free(LogContext *ctx) {
   }
 
 #ifdef WITH_LOG_PTHREADS
-  TODO;
+  pthread_mutex_destroy(&ctx->types_lock);
 #endif
 
   mem_free(ctx);
@@ -275,7 +315,7 @@ static void log_ctx_fatal_action(LogContext *ctx) {
 
 void Log::log_ref_init(LogRef *log_ref) {
 #ifdef WITH_LOG_PTHREADS
-  TODO;
+  pthread_mutex_lock(&g_ctx->types_lock);
 #endif
 
   if (log_ref->type == nullptr) {
@@ -288,14 +328,14 @@ void Log::log_ref_init(LogRef *log_ref) {
     }
 
 #ifdef WITH_LOG_PTHREADS
-    TODO;
+    atomic_cas_ptr((void **)&log_ref->type, log_ref->type, log_ty);
 #else
     log_ref->type = log_ty;
 #endif
   }
 
 #ifdef WITH_LOG_PTHREADS
-  TODO;
+  pthread_mutex_unlock(&g_ctx->types_lock);
 #endif
 }
 
@@ -399,6 +439,22 @@ static void log_str_indent_multiline(LogStringBuf *cstr, const uint32_t indent_l
   todo();
 }
 
+static void write_timestamp(LogStringBuf *cstr, const uint64_t timestamp_tick_start) {
+  char timestamp_str[128];
+  const uint64_t timestamp = timestamp_ticks_get() - timestamp_tick_start;
+  const int h = int(timestamp / (1000 * 60 * 60));
+  const int m = int((timestamp / (1000 * 60)) % 60);
+  const int s = int((timestamp / 1000) % 60);
+  const int r = int(timestamp % 1000);
+
+  const uint32_t timestamp_len =
+      (h > 0) ?
+          snprintf(timestamp_str, sizeof(timestamp_str), "%.2d:%.2d:%.2d.%.3d  ", h, m, s, r) :
+          snprintf(timestamp_str, sizeof(timestamp_str), "%.2d:%.2d.%.3d  ", m, s, r);
+
+  log_str_append_with_len(cstr, timestamp_str, timestamp_len);
+}
+
 static void write_level(LogStringBuf *cstr, LogLevel level, bool use_color) {
   if (level >= LOG_LEVEL_INFO) {
     return;
@@ -416,6 +472,18 @@ static void write_level(LogStringBuf *cstr, LogLevel level, bool use_color) {
   log_str_append(cstr, " ");
 }
 
+static void write_memory(LogStringBuf *cstr) {
+  const uint64_t mem_in_use = mem_get_memory_in_use() / (1024 * 1024);
+  char memory_str[128];
+  const uint32_t len = snprintf(memory_str, sizeof(memory_str), "%dM", (int)mem_in_use);
+
+  log_str_append_with_len(cstr, memory_str, len);
+
+  const uint32_t memory_align_width = 5;
+  const uint32_t num_spaces = (len < memory_align_width) ? memory_align_width - len : 0;
+  log_str_append_char(cstr, ' ', num_spaces + 2);
+}
+
 static void write_type(LogStringBuf *cstr, const LogType *lg) {
   const uint32_t len = strlen(lg->identifier);
   log_str_append_with_len(cstr, lg->identifier, len);
@@ -423,6 +491,26 @@ static void write_type(LogStringBuf *cstr, const LogType *lg) {
   const uint32_t type_align_width = 16;
   const uint32_t num_spaces = (len < type_align_width) ? type_align_width - len : 0;
   log_str_append_char(cstr, ' ', num_spaces + 1);
+}
+
+void Log::output_use_timestamp(bool set) {
+  ctx_output_use_timestamp(g_ctx, set);
+}
+
+void Log::output_use_memory(bool set) {
+  ctx_output_use_memory(g_ctx, set);
+}
+
+void Log::output_use_source(bool set) {
+  ctx_output_use_source(g_ctx, set);
+}
+
+void Log::output_use_basename(bool set) {
+  ctx_output_use_basename(g_ctx, set);
+}
+
+void Log::fatal_fn_set(void (*fatal_fn)(void *file_handle)) {
+  ctx_fatal_fn_set(g_ctx, fatal_fn);
 }
 
 void Log::logf(const LogType *lg,
@@ -436,10 +524,10 @@ void Log::logf(const LogType *lg,
   log_str_init(&cstr, cstr_stack_buf, sizeof(cstr_stack_buf));
 
   if (lg->ctx->use_timestamp) {
-    todo();
+    write_timestamp(&cstr, lg->ctx->timestamp_tick_start);
   }
   if (lg->ctx->use_memory) {
-    todo();
+    write_memory(&cstr);
   }
   write_type(&cstr, lg);
 

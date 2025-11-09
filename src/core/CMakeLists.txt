@@ -3,6 +3,7 @@ set(SRC
         assert.hpp
         assert.cpp
         defines_variadic.hpp
+        atomic_ops_utils.hpp
         atomic_ops_ext.hpp
         utildefines.hpp
         mutex.hpp
@@ -32,6 +33,7 @@ set(SRC
 if (WIN32)
     list(APPEND SRC
             intern/system_win32.cpp
+            intern/atomic_ops_msvc.hpp
     )
 endif ()
 

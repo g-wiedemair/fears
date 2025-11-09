@@ -36,6 +36,12 @@ FECORE_API void exit();
 
 FECORE_API void log_ref_init(LogRef *log_ref);
 
+FECORE_API void output_use_timestamp(bool set);
+FECORE_API void output_use_memory(bool set);
+FECORE_API void output_use_source(bool set);
+FECORE_API void output_use_basename(bool set);
+FECORE_API void fatal_fn_set(void (*fatal_fn)(void *file_handle));
+
 FECORE_API void logf(const LogType *lg,
                      LogLevel level,
                      const char *file_line,

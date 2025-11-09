@@ -2,9 +2,14 @@
 
 #include "core/memory.hpp"
 #include "core/string.hpp"
+#include "core/system.hpp"
 #include "fecore/Log.hpp"
 
 #include <cstdio>
+
+static void callback_log_fatal(void *fp) {
+  system_backtrace(static_cast<FILE *>(fp));
+}
 
 int main(int argc, char **argv) {
   // Guarded allocator
@@ -21,6 +26,8 @@ int main(int argc, char **argv) {
 
   // Initialize logging
   Log::init();
+  Log::output_use_timestamp(true);
+  Log::fatal_fn_set(callback_log_fatal);
 
   // create the feap app
   FeapApp app;

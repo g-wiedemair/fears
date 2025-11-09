@@ -55,7 +55,7 @@ extern void (*mem_print_memlist)();
 // Set the callback function for error output
 extern void (*mem_set_error_callback)(void (*func)(const char *));
 // Memory usage stats
-extern size_t (*mem_get_memory_in_use)();
+extern CORE_API size_t (*mem_get_memory_in_use)();
 // get amount of memory blocks in use
 extern uint32_t (*mem_get_memory_blocks_in_use)();
 

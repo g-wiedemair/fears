@@ -1,60 +1,10 @@
 #pragma once
 
-#include <atomic>
+#include "core/atomic_ops_utils.hpp"
 
 #if defined(_MSC_VER)
-#  define NOGDI
-#  ifndef NOMINMAX
-#    define NOMINMAX
-#  endif
-#  define WIN32_LEAN_AND_MEAN
-#  include <intrin.h>
-#  include <windows.h>
+#  include "core/intern/atomic_ops_msvc.hpp"
 #endif
-
-#if defined(_MSC_VER)
-#  define ATOMIC_INLINE static __forceinline
-#else
-#  define ATOMIC_INLINE static inline __attribute__((always_inline))
-#endif
-
-#if (UINT_MAX == 0xFFFFFFFF)
-#  define LG_SIZEOF_INT 4
-#elif (UINT_MAX == 0xFFFFFFFFFFFFFFFF)
-#  define LG_SIZEOF_INT 8
-#else
-#  error "Cannot find int size"
-#endif
-
-#if defined(__SIZEOF_POINTER__)
-#  define LG_SIZEOF_PTR __SIZEOF_POINTER__
-#elif defined(UINTPTR_MAX)
-#  if (UINTPTR_MAX == 0xFFFFFFFF)
-#    define LG_SIZEOF_PTR 4
-#  elif (UINTPTR_MAX == 0xFFFFFFFFFFFFFFFF)
-#    define LG_SIZEOF_PTR 8
-#  endif
-#elif defined(__WORDSIZE) /* Fallback for older glibc and cpp */
-#  if (__WORDSIZE == 32)
-#    define LG_SIZEOF_PTR 4
-#  elif (__WORDSIZE == 64)
-#    define LG_SIZEOF_PTR 8
-#  endif
-#endif
-
-//-------------------------------------------------------------------------------------------------
-// 32-bit operations
-
-ATOMIC_INLINE uint32_t atomic_add_and_fetch_u32(uint32_t *p, uint32_t x) {
-  return InterlockedExchangeAdd(p, x) + x;
-}
-
-//-------------------------------------------------------------------------------------------------
-// 64-bit operations
-
-ATOMIC_INLINE uint64_t atomic_add_and_fetch_u64(uint64_t *p, uint64_t x) {
-  return InterlockedExchangeAdd64((int64_t *)p, (int64_t)x) + x;
-}
 
 //-------------------------------------------------------------------------------------------------
 
@@ -87,5 +37,16 @@ ATOMIC_INLINE size_t atomic_sub_and_fetch_z(size_t *p, size_t x) {
   return (size_t)atomic_add_and_fetch_u64((uint64_t *)p, (uint64_t)-((int64_t)x));
 #elif (LG_SIZEOF_PTR == 4)
   return (size_t)atomic_add_and_fetch_u32((uint32_t *)p, (uint32_t)-((int32_t)x));
+#endif
+}
+
+//-------------------------------------------------------------------------------------------------
+// Pointer operations
+
+ATOMIC_INLINE void *atomic_cas_ptr(void **v, void *old, void *_new) {
+#if (LG_SIZEOF_PTR == 8)
+  return (void *)atomic_cas_u64((uint64_t *)v, *(uint64_t *)&old, *(uint64_t *)&_new);
+#elif (LG_SIZEOF_PTR == 4)
+  return (void *)atomic_cas_u32((uint32_t *)v, *(uint32_t *)&old, *(uint32_t *)&_new);
 #endif
 }

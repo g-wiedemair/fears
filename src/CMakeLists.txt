@@ -140,6 +140,8 @@ if (WIN32 AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
     option(WITH_TBB_MALLOC_PROXY "Enable the TBB malloc replacement" ON)
 endif ()
 
+option(WITH_LOG_PTHREADS "Enable multi-threaded logging" ON)
+
 #-----------------------------------------------------------------------------------------------------------------------
 # Option definitions
 
@@ -149,6 +151,10 @@ endif ()
 
 if (WITH_TBB)
     add_definitions(-DWITH_TBB)
+endif ()
+
+if (WITH_LOG_PTHREADS)
+    add_definitions(-DWITH_LOG_PTHREADS)
 endif ()
 
 #-----------------------------------------------------------------------------------------------------------------------

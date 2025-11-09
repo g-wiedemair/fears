@@ -34,7 +34,7 @@ bool FeapApp::init(int argc, char **argv) {
   // read the configuration file if specified
   if (_ops.config_filename[0]) {
     if (fenda::configure(_ops.config_filename, _config) == false) {
-      LOG_FATAL(&LOG, "FATAL ERROR: An error occurred reading the configuration file.");
+      LOG_FATAL(&LOG, "An error occurred reading the configuration file.");
       return false;
     }
   }
