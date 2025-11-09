@@ -4,12 +4,16 @@ set(SRC
         assert.cpp
         defines_variadic.hpp
         atomic_ops_ext.hpp
+        utildefines.hpp
         mutex.hpp
         system.hpp
         system.cpp
+        memory.hpp
+        allocator.hpp
         string.hpp
         string.cpp
-        memory.hpp
+        array.hpp
+        map.hpp
         intern/memory_inline.hpp
         intern/memory_function_pointers.hpp
         intern/memory_alloc_intern.hpp
@@ -19,6 +23,11 @@ set(SRC
         intern/memory_alloc_lockfree.cpp
         intern/memory_alloc_guarded.cpp
         intern/system_win32.cpp
+        intern/memory_utils.hpp
+        intern/probing_strategy.hpp
+        intern/hash.hpp
+        intern/hash_tables.hpp
+        intern/map_slots.hpp
 )
 if (WIN32)
     list(APPEND SRC

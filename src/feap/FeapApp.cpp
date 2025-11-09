@@ -15,7 +15,7 @@ static LogRef LOG = {"feap.app"};
 FeapApp::FeapApp() {}
 
 bool FeapApp::init(int argc, char **argv) {
-  // initialize kernel
+  LOG_TRACE(&LOG, "Initializing FeKernel");
   FeKernel::init();
 
   // parse the command line
@@ -33,10 +33,10 @@ bool FeapApp::init(int argc, char **argv) {
 
   // read the configuration file if specified
   if (_ops.config_filename[0]) {
-    // if (fenda::configure(_ops.config_filename, _config) == false) {
-    //   fprintf(stderr, "FATAL ERROR: An error occurred reading the configuration file.\n");
-    //   return false;
-    // }
+    if (fenda::configure(_ops.config_filename, _config) == false) {
+      LOG_FATAL(&LOG, "FATAL ERROR: An error occurred reading the configuration file.");
+      return false;
+    }
   }
 
   return true;

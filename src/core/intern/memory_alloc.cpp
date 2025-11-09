@@ -50,6 +50,10 @@ void mem_free(void *memh) {
   return internal::mem_free(memh, internal::AllocationType::ALLOC_FREE);
 }
 
+void *mem_malloc_aligned(size_t len, size_t alignment, const char *str) {
+  return internal::mem_malloc_aligned(len, alignment, str, internal::AllocationType::ALLOC_FREE);
+}
+
 void *mem_calloc(size_t len, const char *str) {
   return internal::mem_calloc(len, str);
 }

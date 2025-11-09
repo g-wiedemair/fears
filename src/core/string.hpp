@@ -3,12 +3,9 @@
 #include "core/core_api.hpp"
 #include "core/defines_variadic.hpp"
 #include <cstdarg>
-#include <cstring>
+#include <string>
 
-#define STRINGIFY_APPEND(a, b) "" a #b
-#define STRINGIFY(x) STRINGIFY_APPEND("", x)
-
-#define STREQ(a, b) (strcmp(a, b) == 0)
+using String = std::string;
 
 /**
  * String debugging

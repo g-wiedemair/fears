@@ -2,7 +2,6 @@
 
 #include "core/assert.hpp"
 #include "core/memory.hpp"
-#include "core/string.hpp"
 
 #include <cassert>
 #include <mutex>
@@ -270,6 +269,8 @@ static void log_ctx_fatal_action(LogContext *ctx) {
   if (ctx->callbacks.fatal_fn != nullptr) {
     ctx->callbacks.fatal_fn(ctx->output_file);
   }
+  fflush(ctx->output_file);
+  abort();
 }
 
 void Log::log_ref_init(LogRef *log_ref) {

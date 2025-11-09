@@ -2,6 +2,7 @@
 
 #include "core/assert.hpp"
 #include "core/string.hpp"
+#include "core/utildefines.hpp"
 #include <cstring>
 
 static bool version_initialized = false;

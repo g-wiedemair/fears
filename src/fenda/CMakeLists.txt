@@ -1,8 +1,9 @@
 set(SRC
         fenda_api.hpp
         fenda.hpp
-        hello.cpp
         fenda.cpp
+        hello.cpp
+        config.cpp
         FeapConfig.cpp
         FeapConfig.hpp
 )

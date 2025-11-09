@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/utildefines.hpp"
 #include "fecore/fecore_api.hpp"
 
 struct LogContext;

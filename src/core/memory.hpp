@@ -28,6 +28,12 @@ CORE_API void mem_free(void *vmemh);
 extern CORE_API void *(*mem_malloc)(size_t len, const char *str);
 
 /**
+ * Allocate an aligned block of memory of size len, with tag name str.
+ * The name must be static, because only a pointer to it is stored
+ */
+extern CORE_API void *mem_malloc_aligned(size_t len, size_t alignment, const char *str);
+
+/**
  * Allocate a block of memory of size len, with tag name str. The
  * memory is cleared. The name must be static, because only a
  * pointer to it is stored!
