@@ -34,6 +34,13 @@ extern CORE_API void *(*mem_malloc)(size_t len, const char *str);
 extern CORE_API void *mem_malloc_aligned(size_t len, size_t alignment, const char *str);
 
 /**
+ * Allocate a block of memory of size (len * size), with tag name str,
+ * aborting in case of integer overflow to prevent vulnerabilities.
+ * The name must be static, because only a pointer to it is stored.
+ */
+extern CORE_API void *(*mem_malloc_array)(size_t len, size_t size, const char *str);
+
+/**
  * Allocate a block of memory of size len, with tag name str. The
  * memory is cleared. The name must be static, because only a
  * pointer to it is stored!

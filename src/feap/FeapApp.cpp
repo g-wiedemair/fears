@@ -80,7 +80,13 @@ void FeapApp::process_commands() {
   while (true) {
     shell->get_command(argc, argv);
     if (argc > 0) {
-      printf("Unknown command: %s\n", argv[0]);
+      Command *cmd = cm->find(argv[0]);
+      if (cmd) {
+        int nret = cmd->run(argc, argv);
+        if (nret == 1)
+          break;
+      } else
+        printf("Unknown command: %s\n", argv[0]);
     } else {
       break;
     }

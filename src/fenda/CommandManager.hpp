@@ -1,24 +1,62 @@
 #pragma once
 
+#include "core/StringRef.hpp"
+#include "core/VectorMap.hpp"
 #include "core/memory.hpp"
+#include "fenda/Command.hpp"
 #include "fenda/fenda_api.hpp"
 
-class FENDA_API CommandManager {
+#define COMMAND_COUNT 10
+
+class CommandManager {
  private:
-  static CommandManager *_instance;
+  static CommandManager *instance_;
+
+  VectorMap<StringRef, Command *, COMMAND_COUNT> cmds_;
 
  public:
-  static CommandManager *get_handle() {
+  static inline FENDA_API CommandManager *get_handle() {
     static bool bfirst = true;
     if (bfirst) {
-      _instance = mem_new<CommandManager>(__func__);
+      instance_ = mem_new<CommandManager>(__func__);
       bfirst = false;
     }
-    return _instance;
+    return instance_;
+  }
+
+  FENDA_API ~CommandManager();
+
+ public:
+  inline int64_t size() {
+    return cmds_.size();
+  }
+
+  inline FENDA_API void add_command(Command *cmd) {
+    cmds_.add(cmd->name_, cmd);
+  }
+
+  inline FENDA_API Command *find(const char *cmd) {
+    Vector<Command *>::iterator it;
+    for (it = cmds_.begin(); it != cmds_.end(); ++it) {
+      if (strcmp(cmd, (*it)->get_name()) == 0)
+        return *it;
+    }
+
+    return nullptr;
+  }
+
+  typedef Vector<Command *>::iterator CmdIterator;
+  CmdIterator begin() {
+    return cmds_.begin();
+  }
+  CmdIterator end() {
+    return cmds_.end();
   }
 
  private:
   CommandManager();
+
+  void register_command(Command *cmd, const char *name, const char *desc);
 
   template<typename T, typename... Args> friend T *mem_new(const char *, Args &&...);
 };

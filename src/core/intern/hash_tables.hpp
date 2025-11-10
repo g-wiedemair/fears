@@ -14,6 +14,15 @@ template<typename T> struct DefaultEquality {
   }
 };
 
+/**
+ * Support comparing different kinds of raw and smart pointers
+ */
+struct PointerComparison {
+  template<typename T1, typename T2> bool operator()(const T1 &a, const T2 &b) const {
+    return &*a == &*b;
+  }
+};
+
 //-------------------------------------------------------------------------------------------------
 
 /**
@@ -27,6 +36,10 @@ template<typename T> struct DefaultEquality {
 template<typename Pointer> struct PointerKeyInfo {
   static Pointer get_empty() {
     return (Pointer)UINTPTR_MAX;
+  }
+
+  static bool is_not_empty_or_removed(Pointer pointer) {
+    return uintptr_t(pointer) < UINTPTR_MAX - 1;
   }
 };
 
@@ -42,6 +55,12 @@ constexpr int64_t ceil_division_by_fraction(const int64_t x,
                                             const int64_t numerator,
                                             const int64_t denominator) {
   return int64_t(ceil_division(uint64_t(x) * uint64_t(denominator), uint64_t(numerator)));
+}
+
+constexpr int64_t floor_multiplication_with_fraction(const int64_t x,
+                                                     const int64_t numerator,
+                                                     const int64_t denominator) {
+  return int64_t((uint64_t(x) * uint64_t(numerator) / uint64_t(denominator)));
 }
 
 constexpr int64_t total_slot_amount_for_usable_slots(const int64_t min_usable_slots,
@@ -71,7 +90,16 @@ class LoadFactor {
                                                 int64_t min_usable_slots,
                                                 int64_t *r_total_slots,
                                                 int64_t *r_usable_slots) const {
-    todo();
+    fassert(is_power_of_2(int(min_total_slots)));
+
+    int64_t total_slots = this->compute_total_slots(min_usable_slots, numerator_, denominator_);
+    total_slots = std::max(total_slots, min_total_slots);
+    const int64_t usable_slots = floor_multiplication_with_fraction(
+        total_slots, numerator_, denominator_);
+    fassert(min_usable_slots <= usable_slots);
+
+    *r_total_slots = total_slots;
+    *r_usable_slots = usable_slots;
   }
 
   static constexpr int64_t compute_total_slots(int64_t min_usable_slots,

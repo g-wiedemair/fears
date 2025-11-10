@@ -12,6 +12,7 @@ void *(*internal::mem_malloc_aligned)(size_t len,
                                       const char *str,
                                       internal::AllocationType allocation_type) =
     mem_lockfree_malloc_aligned;
+void *(*mem_malloc_array)(size_t len, size_t size, const char *str) = mem_lockfree_malloc_array;
 void *(*internal::mem_calloc)(size_t len, const char *str) = mem_lockfree_calloc;
 void *(*mem_calloc_array_aligned)(size_t len,
                                   size_t size,
@@ -68,6 +69,7 @@ void mem_use_guarded_allocator() {
   internal::mem_free = mem_guarded_free;
   mem_malloc = mem_guarded_malloc;
   internal::mem_malloc_aligned = mem_guarded_malloc_aligned;
+  mem_malloc_array = mem_guarded_malloc_array;
   internal::mem_calloc = mem_guarded_calloc;
   mem_calloc_array_aligned = mem_guarded_calloc_array_aligned;
 

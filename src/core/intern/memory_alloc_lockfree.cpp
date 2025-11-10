@@ -225,6 +225,11 @@ void *mem_lockfree_malloc_aligned(size_t len,
   return nullptr;
 }
 
+void *mem_lockfree_malloc_array(size_t len, size_t size, const char *str) {
+  todo();
+  return nullptr;
+}
+
 void *mem_lockfree_calloc(size_t len, const char *str) {
   MemHead *memh;
   len = SIZET_ALIGN_4(len);

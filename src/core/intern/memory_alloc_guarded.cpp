@@ -536,6 +536,23 @@ static void *mem_guarded_malloc_array_aligned(
   // return mem_malloc_aligned(r_bytes_num, alignment, str);
 }
 
+void *mem_guarded_malloc_array(size_t len, size_t size, const char *str) {
+  size_t total_size;
+  if (UNLIKELY(!mem_size_safe_multiply(len, size, &total_size))) {
+    print_error(
+        "Malloc array aborted due to integer overflow: "
+        "len=" SIZET_FORMAT "x" SIZET_FORMAT " in %s, total " SIZET_FORMAT " \n",
+        SIZET_ARG(len),
+        SIZET_ARG(size),
+        str,
+        mem_in_use);
+    abort();
+    return nullptr;
+  }
+
+  return mem_guarded_malloc(total_size, str);
+}
+
 void *mem_guarded_calloc(size_t len, const char *str) {
   MemHead *memh;
   len = SIZET_ALIGN_4(len);

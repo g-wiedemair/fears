@@ -1,4 +1,4 @@
-#include "core/map.hpp"
+#include "core/HashMap.hpp"
 #include "core/string.hpp"
 #include "fenda.hpp"
 

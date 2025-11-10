@@ -10,6 +10,8 @@ set(SRC
         Interruption.hpp
         CommandManager.cpp
         CommandManager.hpp
+        Command.hpp
+        Command.cpp
 )
 
 add_library(fenda SHARED ${SRC})

@@ -13,11 +13,13 @@ set(SRC
         allocator.hpp
         string.hpp
         string.cpp
+        StringRef.hpp
         IndexRange.hpp
         Span.hpp
         array.hpp
         Vector.hpp
-        map.hpp
+        HashMap.hpp
+        VectorMap.hpp
         intern/memory_inline.hpp
         intern/memory_function_pointers.hpp
         intern/memory_alloc_intern.hpp

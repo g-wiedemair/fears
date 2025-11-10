@@ -90,6 +90,7 @@ class Array {
 
   Array &operator=(Array &&other) noexcept(std::is_nothrow_move_constructible_v<T>) {
     todo();
+    return *this;
   }
 
   T &operator[](int64_t index) {
@@ -126,6 +127,32 @@ class Array {
   }
   const Allocator &allocator() const {
     return allocator_;
+  }
+
+  /// Destruct values and create a new array of the given size.
+  void reinitialize(const int64_t new_size) {
+    fassert(new_size >= 0);
+    int64_t old_size = size_;
+
+    destruct_n(data_, size_);
+    size_ = 0;
+
+    if (new_size <= old_size) {
+      default_construct_n(data_, new_size);
+    } else {
+      T *new_data = this->get_buffer_for_size(new_size);
+      try {
+        default_construct_n(new_data, new_size);
+      }
+      catch (...) {
+        this->deallocate_if_not_inline(new_data);
+        throw;
+      }
+      this->deallocate_if_not_inline(data_);
+      data_ = new_data;
+    }
+
+    size_ = new_size;
   }
 
  private:

@@ -42,6 +42,61 @@ template<typename Key, typename Value> class SimpleMapSlot {
                                                 std::is_nothrow_move_constructible_v<Value>) {
     todo();
   }
+
+  Key *key() {
+    return key_buffer_;
+  }
+  const Key *key() const {
+    return key_buffer_;
+  }
+
+  Value *value() {
+    return value_buffer_;
+  }
+  const Value *value() const {
+    return value_buffer_;
+  }
+
+  bool is_empty() const {
+    return state_ == Empty;
+  }
+
+  bool is_occupied() const {
+    return state_ == Occupied;
+  }
+
+  template<typename Hash> uint64_t get_hash(const Hash &hash) {
+    fassert(this->is_occupied());
+    return hash(*key_buffer_);
+  }
+
+  template<typename ForwardKey, typename IsEqual>
+  bool contains(const ForwardKey &key, const IsEqual &is_equal, uint64_t /*hash*/) const {
+    if (state_ == Occupied) {
+      return is_equal(key, *key_buffer_);
+    }
+    return false;
+  }
+
+  template<typename ForwardKey, typename... ForwardValue>
+  void occupy(ForwardKey &&key, uint64_t hash, ForwardValue &&...value) {
+    fassert(!this->is_occupied());
+    new (&value_buffer_) Value(std::forward<ForwardValue>(value)...);
+    this->occupy_no_value(std::forward<ForwardKey>(key), hash);
+    state_ = Occupied;
+  }
+
+  template<typename ForwardKey> void occupy_no_value(ForwardKey &&key, uint64_t /*hash*/) {
+    fassert(!this->is_occupied());
+    try {
+      new (&key_buffer_) Key(std::forward<ForwardKey>(key));
+    }
+    catch (...) {
+      value_buffer_.ref().~Value();
+      throw;
+    }
+    state_ = Occupied;
+  }
 };
 
 /**
@@ -61,7 +116,9 @@ template<typename Key, typename Value, typename KeyInfo> class IntrusiveMapSlot 
   IntrusiveMapSlot() = default;
 
   ~IntrusiveMapSlot() {
-    todo();
+    if (KeyInfo::is_not_empty_or_removed(key_)) {
+      value_buffer_.ref().~Value();
+    }
   }
 
   IntrusiveMapSlot(const IntrusiveMapSlot &other) : key_(other.key_) {

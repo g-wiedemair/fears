@@ -217,13 +217,15 @@ _EXPORT_STD class Vector {
   }
 
   int64_t append_and_get_index(const T &value) {
-    todo();
+    return this->append_and_get_index_as(value);
   }
-  int64_t append_and_get_index(const T &&value) {
-    todo();
+  int64_t append_and_get_index(T &&value) {
+    return this->append_and_get_index_as(std::move(value));
   }
   template<typename... ForwardValue> int64_t append_and_get_index_as(ForwardValue &&...value) {
-    todo();
+    const int64_t index = this->size();
+    this->append_as(std::forward<ForwardValue>(value)...);
+    return index;
   }
 
   void append_non_duplicates(const T &value) {
@@ -241,6 +243,13 @@ _EXPORT_STD class Vector {
     new (end_) T(std::forward<ForwardValue>(value)...);
     end_++;
     UPDATE_VECTOR_SIZE(this);
+  }
+
+  T *begin() {
+    return begin_;
+  }
+  T *end() {
+    return end_;
   }
 
   int64_t size() const {
