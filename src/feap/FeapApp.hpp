@@ -12,11 +12,20 @@ class FeapApp {
 
  public:
   FeapApp();
+  ~FeapApp();
 
   bool init(int argc, char **argv);
+  int run();
   void finish();
 
  private:
+  /// Show Feap prompt
+  int prompt();
+  void process_commands();
+
+  /// Run a Feap model
+  int run_model();
+
   bool parse_cmd_line(int argc, char **argv);
 
  public:

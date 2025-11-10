@@ -36,12 +36,12 @@ int main(int argc, char **argv) {
   if (app.init(argc, argv) == false)
     return 1;
 
-  // TODO:
+  int nret = app.run();
 
   // cleanup
   app.finish();
 
   Log::exit();
 
-  return 0;
+  return nret;
 }

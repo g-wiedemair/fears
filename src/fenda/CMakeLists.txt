@@ -6,6 +6,10 @@ set(SRC
         config.cpp
         FeapConfig.cpp
         FeapConfig.hpp
+        Interruption.cpp
+        Interruption.hpp
+        CommandManager.cpp
+        CommandManager.hpp
 )
 
 add_library(fenda SHARED ${SRC})

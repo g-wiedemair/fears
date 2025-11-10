@@ -1,18 +1,25 @@
 #include "FeapApp.hpp"
 
+#include "core/memory.hpp"
 #include "core/string.hpp"
 #include "core/sys_types.hpp"
 #include "fecore/Console.hpp"
 #include "fecore/FeKernel.hpp"
 #include "fecore/Log.hpp"
+#include "fecore/feap_version.hpp"
 #include "fecore/utils.hpp"
+#include "fenda/CommandManager.hpp"
+#include "fenda/Interruption.hpp"
 #include "fenda/fenda.hpp"
-
-#include <cstdio>
 
 static LogRef LOG = {"feap.app"};
 
 FeapApp::FeapApp() {}
+
+FeapApp::~FeapApp() {
+  Console *console = Console::get_handle();
+  mem_delete(console);
+}
 
 bool FeapApp::init(int argc, char **argv) {
   LOG_TRACE(&LOG, "Initializing FeKernel");
@@ -40,6 +47,51 @@ bool FeapApp::init(int argc, char **argv) {
   }
 
   return true;
+}
+
+int FeapApp::run() {
+  // activate interruption handler
+  Interruption I;
+
+  if (_ops.binteractive) {
+    return prompt();
+  } else {
+    return run_model();
+  }
+}
+
+int FeapApp::prompt() {
+  Console *shell = Console::get_handle();
+  const char *version = feap_version_string();
+  shell->set_title("Feap ", version);
+
+  process_commands();
+
+  return 0;
+}
+
+void FeapApp::process_commands() {
+  Console *shell = Console::get_handle();
+
+  CommandManager *cm = CommandManager::get_handle();
+
+  int argc = 0;
+  char *argv[32];
+  while (true) {
+    shell->get_command(argc, argv);
+    if (argc > 0) {
+      printf("Unknown command: %s\n", argv[0]);
+    } else {
+      break;
+    }
+  }
+
+  mem_delete(cm);
+}
+
+int FeapApp::run_model() {
+  todo();
+  return 0;
 }
 
 void FeapApp::finish() {

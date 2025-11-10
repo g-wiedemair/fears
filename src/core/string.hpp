@@ -5,7 +5,7 @@
 #include <cstdarg>
 #include <string>
 
-using String = std::string;
+_EXPORT_STD using String = std::string;
 
 /**
  * String debugging

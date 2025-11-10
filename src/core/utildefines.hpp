@@ -10,6 +10,8 @@
 
 #define AT __FILE__ ":" STRINGIFY(__LINE__)
 
+#define ENABLE_IF(condition) typename std::enable_if_t<(condition)> * = nullptr
+
 #if defined(_MSC_VER) && !defined(__clang__)
 #  define FE_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #elif defined(__has_cpp_attribute)

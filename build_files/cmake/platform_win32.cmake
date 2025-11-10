@@ -31,6 +31,13 @@ string(APPEND CMAKE_CXX_FLAGS_RELEASE " /MD /Z7")
 
 string(APPEND PLATFORM_LINKFLAGS " /SUBSYSTEM:CONSOLE /STACK:2097152")
 
+# windows manifest
+configure_file(
+        ${CMAKE_SOURCE_DIR}/../build_files/windows/feap.exe.manifest.in
+        ${CMAKE_CURRENT_BINARY_DIR}/feap.exe.manifest
+        @ONLY
+)
+
 # no default lib
 string(APPEND PLATFORM_LINKFLAGS_RELEASE " ${PLATFORM_LINKFLAGS} /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib")
 string(APPEND PLATFORM_LINKFLAGS_DEBUG " ${PLATFORM_LINKFLAGS} /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrt.lib")

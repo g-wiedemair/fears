@@ -11,11 +11,11 @@ static char version_string[50] = "";
 static void version_init() {
   const char *version_cycle = "";
   if (STREQ(STRINGIFY(FEAP_VERSION_CYCLE), "alpha")) {
-    version_cycle = " Alpha";
+    version_cycle = " alpha";
   } else if (STREQ(STRINGIFY(FEAP_VERSION_CYCLE), "beta")) {
-    version_cycle = " Beta";
+    version_cycle = " beta";
   } else if (STREQ(STRINGIFY(FEAP_VERSION_CYCLE), "rc")) {
-    version_cycle = " Release Candidate";
+    version_cycle = " release candidate";
   } else if (STREQ(STRINGIFY(FEAP_VERSION_CYCLE), "release")) {
     version_cycle = "";
   } else {

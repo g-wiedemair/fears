@@ -5,6 +5,22 @@
 
 #include <cstdint>
 
+/**
+ * A Array<T> is a container for a fixed size array the size of which is NOT known at compile time
+ * If the size is known at compile time, std::array<T, N> should be used instead.
+ *
+ * Array should usually be used instead of Vector whenever the number of elements is known at
+ * construction time. NOte however, that Array will default construct all elements when initialized
+ * with the size-constructor. For trivial types, this does nothing. In all other cases, this adds
+ * overhead.
+ *
+ * A main benefit of using Array over Vector is that it expresses the intent of the developer
+ * better. It indicates that the size of the data structure is not expected to change. Furthermore
+ * you can be more certain that an array does not over-allocate.
+ *
+ * Array supports small object optimization to improve performance when the size turns out to be
+ * small at run-time.
+ */
 template<
     /**
      * The type of the values stored in the array

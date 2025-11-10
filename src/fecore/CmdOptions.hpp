@@ -5,9 +5,9 @@
 /// This structure stores the command line options
 struct CmdOptions {
 
-  bool bsplash;  //< show splash screen
-  bool bsilent;  //< run in silent mode (no output to screen)
-
+  bool bsplash;       //< show splash screen
+  bool bsilent;       //< run in silent mode (no output to screen)
+  bool binteractive;  //< start Feap interactively
   char config_filename[FILE_MAX];
 
   CmdOptions() {
@@ -17,6 +17,7 @@ struct CmdOptions {
   void defaults() {
     bsplash = true;
     bsilent = false;
+    binteractive = true;
 
     config_filename[0] = 0;
   }

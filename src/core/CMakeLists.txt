@@ -13,7 +13,10 @@ set(SRC
         allocator.hpp
         string.hpp
         string.cpp
+        IndexRange.hpp
+        Span.hpp
         array.hpp
+        Vector.hpp
         map.hpp
         intern/memory_inline.hpp
         intern/memory_function_pointers.hpp
@@ -29,6 +32,7 @@ set(SRC
         intern/hash.hpp
         intern/hash_tables.hpp
         intern/map_slots.hpp
+        intern/RandomAccessIterator.hpp
 )
 if (WIN32)
     list(APPEND SRC
