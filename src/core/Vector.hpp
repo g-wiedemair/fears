@@ -206,7 +206,7 @@ class Vector {
   }
 
   void append(const T &value) {
-    todo();
+    this->append_as(value);
   }
   void append(const T &&value) {
     this->append_as(std::move(value));

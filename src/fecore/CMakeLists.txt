@@ -9,6 +9,8 @@ set(SRC
         log.hpp
         LogStream.cpp
         LogStream.hpp
+        LogFileStream.cpp
+        LogFileStream.hpp
         Console.cpp
         Console.hpp
         FeKernel.hpp

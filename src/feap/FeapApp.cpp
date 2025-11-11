@@ -16,6 +16,26 @@
 static FeapApp *instance_ = nullptr;
 static LogRef LOG = {"feap.app"};
 
+//-------------------------------------------------------------------------------------------------
+// Callbacks
+
+bool update_console_cb(FeModel *fem, uint32_t event, void *user_data) {
+  todo();
+  return true;
+}
+
+bool break_point_cb(FeModel *fem, uint32_t event, void *user_data) {
+  todo();
+  return true;
+}
+
+bool interrupt_cb(FeModel *fem, uint32_t event, void *user_data) {
+  todo();
+  return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+
 FeapApp::~FeapApp() {
   Console *console = Console::get_handle();
   mem_delete(console);
@@ -116,9 +136,30 @@ int FeapApp::run_model() {
     fem.get_logfile().set_logstream(mem_new<ConsoleStream>(__FILE__));
   }
 
+  // register callbacks
+  fem.add_callback(
+      update_console_cb, CB_MAJOR_ITERS | CB_INIT | CB_SOLVED | CB_STEP_ACTIVE, nullptr);
+  fem.add_callback(interrupt_cb, CB_ALWAYS, nullptr);
+  fem.add_callback(break_point_cb, CB_ALWAYS, nullptr);
+
+  // set options from command line
+  fem.set_title(ops_.base_filename);
+  fem.set_log_level(ops_.log_level);
+  fem.set_log_filename(ops_.log_filename);
+
+  int nret = 0;
+
+  // read the input file
+  if (ops_.input_filename[0]) {
+    if (fem.read_input_file(ops_.input_filename))
+      nret = 1;
+  }
+
+  // solve the model
+
   // reset the model
   this->set_current_model(nullptr);
-  return 0;
+  return nret;
 }
 
 void FeapApp::set_current_model(FeapModel *fem) {
@@ -200,7 +241,6 @@ bool FeapApp::parse_cmd_line(int argc, char **argv) {
         strcpy(ops_.input_filename, argv[i]);
       }
       ops_.binteractive = false;
-      return true;
     } else {
       // If no input file is given yet, we'll assume this is the input file
       if (ops_.input_filename[0] == 0) {
@@ -212,7 +252,6 @@ bool FeapApp::parse_cmd_line(int argc, char **argv) {
           strcpy(ops_.input_filename, argv[i]);
         }
         ops_.binteractive = false;
-        return true;
       } else {
         LOG_ERROR(&LOG, "Invalid command line option: %s", arg);
         return false;
@@ -220,7 +259,21 @@ bool FeapApp::parse_cmd_line(int argc, char **argv) {
     }
   }
 
-  this->print_help();
+  if (ops_.input_filename[0] == 0) {
+    this->print_help();
+  } else {
+    // Derive the other filenames
+    strcpy(ops_.base_filename, ops_.input_filename);
+    char *ch = strrchr(ops_.base_filename, '.');
+    if (ch) {
+      *ch = 0;
+    }
+
+    if (ops_.log_filename[0] == 0) {
+      fsnprintf(ops_.log_filename, sizeof(ops_.log_filename), "%s.log", ops_.base_filename);
+    }
+  }
+
   return true;
 }
 

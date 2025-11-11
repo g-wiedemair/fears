@@ -5,4 +5,10 @@
 
 /// Base class for most classes in FeCore library and the base class for all
 /// classes that can be registered with the framework
-class FECORE_API FeCoreBase : public FeParamContainer {};
+class FECORE_API FeCoreBase : public FeParamContainer {
+ public:
+  FeCoreBase() = default;
+  FeCoreBase(const FeCoreBase &) = delete;
+  FeCoreBase(FeCoreBase &&) = delete;
+  ~FeCoreBase() override = default;
+};

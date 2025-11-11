@@ -29,5 +29,7 @@ class FECORE_API FeParamContainer {
 
  public:
   FeParamContainer();
+  FeParamContainer(const FeParamContainer &) = delete;
+  FeParamContainer(FeParamContainer &&) = delete;
   virtual ~FeParamContainer();
 };

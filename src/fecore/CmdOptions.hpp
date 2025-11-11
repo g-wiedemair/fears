@@ -15,7 +15,9 @@ struct CmdOptions {
   bool bdebug_memory;              //< Enable memory debugging
                                    //
   char config_filename[FILE_MAX];  //< config file to use
+  char base_filename[FILE_MAX];    //< base filename
   char input_filename[FILE_MAX];   //< input script to run
+  char log_filename[FILE_MAX];     //< log file to use
 
   CmdOptions() {
     defaults();

@@ -52,10 +52,12 @@ class CallbackHandler {
 
  public:
   FECORE_API CallbackHandler();
+  CallbackHandler(const CallbackHandler &) = delete;
+  CallbackHandler(CallbackHandler &&) = delete;
   FECORE_API ~CallbackHandler();
 
-  void add_callback(CallbackFunction pcb,
-                    uint32_t event,
-                    void *pud,
-                    CbInsertPolicy insert = CB_ADD_END);
+  FECORE_API void add_callback(CallbackFunction pcb,
+                               uint32_t event,
+                               void *pud,
+                               CbInsertPolicy insert = CB_ADD_END);
 };
