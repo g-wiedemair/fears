@@ -2,7 +2,7 @@
 
 #include <signal.h>
 
-bool Interruption::m_bsig = false;
+bool Interruption::bsig_ = false;
 
 Interruption::Interruption() {
   static bool init = false;
@@ -15,6 +15,6 @@ Interruption::Interruption() {
 Interruption::~Interruption() {}
 
 void Interruption::handler(int sig) {
-  m_bsig = true;
+  bsig_ = true;
   signal(SIGINT, Interruption::handler);
 }

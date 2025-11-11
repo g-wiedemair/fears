@@ -3,8 +3,7 @@
 #include "core/StringRef.hpp"
 #include "core/VectorMap.hpp"
 #include "core/memory.hpp"
-#include "fenda/Command.hpp"
-#include "fenda/fenda_api.hpp"
+#include "feap/Command.hpp"
 
 #define COMMAND_COUNT 10
 
@@ -15,7 +14,7 @@ class CommandManager {
   VectorMap<StringRef, Command *, COMMAND_COUNT> cmds_;
 
  public:
-  static inline FENDA_API CommandManager *get_handle() {
+  static inline CommandManager *get_handle() {
     static bool bfirst = true;
     if (bfirst) {
       instance_ = mem_new<CommandManager>(__func__);
@@ -24,18 +23,18 @@ class CommandManager {
     return instance_;
   }
 
-  FENDA_API ~CommandManager();
+  ~CommandManager();
 
  public:
   inline int64_t size() {
     return cmds_.size();
   }
 
-  inline FENDA_API void add_command(Command *cmd) {
+  inline void add_command(Command *cmd) {
     cmds_.add(cmd->name_, cmd);
   }
 
-  inline FENDA_API Command *find(const char *cmd) {
+  inline Command *find(const char *cmd) {
     Vector<Command *>::iterator it;
     for (it = cmds_.begin(); it != cmds_.end(); ++it) {
       if (strcmp(cmd, (*it)->get_name()) == 0)

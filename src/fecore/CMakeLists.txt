@@ -13,6 +13,18 @@ set(SRC
         Console.hpp
         FeKernel.hpp
         FeKernel.cpp
+        Callback.cpp
+        Callback.hpp
+        FeParam.cpp
+        FeParam.hpp
+        FeParamList.cpp
+        FeParamList.hpp
+        FeParamValidator.cpp
+        FeParamValidator.hpp
+        FeCoreBase.cpp
+        FeCoreBase.hpp
+        FeModel.cpp
+        FeModel.hpp
 )
 
 add_library(fecore SHARED ${SRC})

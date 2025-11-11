@@ -226,8 +226,20 @@ void *mem_lockfree_malloc_aligned(size_t len,
 }
 
 void *mem_lockfree_malloc_array(size_t len, size_t size, const char *str) {
-  todo();
-  return nullptr;
+  size_t total_size;
+  if (UNLIKELY(!mem_size_safe_multiply(len, size, &total_size))) {
+    print_error(
+        "Malloc array aborted due to integer overflow: "
+        "len=" SIZET_FORMAT "x" SIZET_FORMAT " in %s, total " SIZET_FORMAT "\n",
+        SIZET_ARG(len),
+        SIZET_ARG(size),
+        str,
+        memory_usage_current());
+    abort();
+    return nullptr;
+  }
+
+  return mem_lockfree_malloc(total_size, str);
 }
 
 void *mem_lockfree_calloc(size_t len, const char *str) {

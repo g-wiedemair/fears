@@ -291,7 +291,7 @@ static LogType *log_ctx_type_register(LogContext *ctx, const char *identifier) {
   ty->ctx = ctx;
 
   if (log_ctx_filter_check(ctx, ty->identifier)) {
-    todo();
+    ty->level = ctx->default_type.level;
   } else {
     ty->level = std::min(ctx->default_type.level, LOG_LEVEL_WARN);
   }
@@ -507,6 +507,10 @@ void Log::output_use_source(bool set) {
 
 void Log::output_use_basename(bool set) {
   ctx_output_use_basename(g_ctx, set);
+}
+
+void Log::set_level(LogLevel level) {
+  g_ctx->default_type.level = level;
 }
 
 void Log::fatal_fn_set(void (*fatal_fn)(void *file_handle)) {

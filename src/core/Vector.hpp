@@ -34,7 +34,7 @@ template<
      * The allocator used by this vector
      */
     typename Allocator = GuardedAllocator>
-_EXPORT_STD class Vector {
+class Vector {
  public:
   using value_type = T;
   using pointer = T *;
@@ -243,6 +243,23 @@ _EXPORT_STD class Vector {
     new (end_) T(std::forward<ForwardValue>(value)...);
     end_++;
     UPDATE_VECTOR_SIZE(this);
+  }
+
+  /**
+   * Insert values at the beginning of the vector
+   * This has to move all the other elements, so it is not very efficient.
+   */
+  void prepend(const T &value) {
+    todo();
+  }
+  void prepend(T &&value) {
+    todo();
+  }
+  void prepend(Span<T> values) {
+    todo();
+  }
+  template<typename InputIt> void prepend(InputIt first, InputIt last) {
+    todo();
   }
 
   T *begin() {

@@ -202,5 +202,6 @@ include_directories(${CMAKE_BINARY_DIR})
 
 add_subdirectory(core)
 add_subdirectory(fecore)
+add_subdirectory(femech)
 add_subdirectory(fenda)
 add_subdirectory(feap)

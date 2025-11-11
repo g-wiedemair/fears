@@ -2,6 +2,12 @@ set(SRC
         feap.cpp
         FeapApp.cpp
         FeapApp.hpp
+        Interruption.hpp
+        Interruption.cpp
+        Command.hpp
+        Command.cpp
+        CommandManager.hpp
+        CommandManager.cpp
 )
 
 if (WIN32)

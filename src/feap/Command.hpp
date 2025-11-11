@@ -2,9 +2,10 @@
 
 #include "core/assert.hpp"
 #include "core/memory.hpp"
-#include "fenda/fenda_api.hpp"
 
-class FENDA_API Command {
+class FeapModel;
+
+class Command {
  private:
   char *name_;
   char *desc_;
@@ -55,7 +56,17 @@ class CmdHelp : public Command {
   int run(int argc, char **argv);
 };
 
+class CmdQuit : public Command {
+ public:
+  int run(int argc, char **argv);
+};
+
 class CmdVersion : public Command {
+ public:
+  int run(int argc, char **argv);
+};
+
+class CmdRun : public Command {
  public:
   int run(int argc, char **argv);
 };

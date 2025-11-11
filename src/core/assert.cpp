@@ -5,7 +5,7 @@
 #include <cstdlib>
 
 void assert_print_pos(const char *file, int line, const char *function, const char *id) {
-  fprintf(stderr, "fe_assert failed: %s:%d, %s(), at \'%s\'\n", file, line, function, id);
+  fprintf(stderr, "assert failed: %s:%d, %s(), at \'%s\'\n", file, line, function, id);
 }
 
 void assert_print_extra(const char *str) {

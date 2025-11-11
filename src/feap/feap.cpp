@@ -29,18 +29,17 @@ int main(int argc, char **argv) {
   Log::output_use_timestamp(true);
   Log::fatal_fn_set(callback_log_fatal);
 
-  // create the feap app
-  FeapApp app;
-
   // initialize the app
-  if (app.init(argc, argv) == false)
+  FeapApp *app = FeapApp::init(argc, argv);
+  if (app == nullptr) {
+    Log::exit();
     return 1;
+  }
 
-  int nret = app.run();
+  int nret = app->run();
 
   // cleanup
-  app.finish();
-
+  app->finish();
   Log::exit();
 
   return nret;
